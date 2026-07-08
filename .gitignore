@@ -1,0 +1,63 @@
+# Environments
+.venv/
+.venv_mac/
+
+# Python caches and artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Build and Dist folders (PyInstaller / Inno Setup)
+build/
+dist/
+installer_output/
+*.spec
+
+# Application Data & Temporary extraction folders
+logs/
+temp_zip_extracted/
+scratch/
+C:/
+
+# Raw Data and Processing Results
+IRIS Data/
+New Raw Data/
+Raw Data/
+Result/
+SATNA BATCH 01 F H/
+Success and Fail Sample/
+
+# Large binaries, media and archives
+*.zip
+*.pdf
+*.mp4
+*.mp3
+*.apk
+*.psd
+# Ignore general images except UI assets
+*.jpg
+*.jpeg
+!Software Layout.jpg
+!temp_process.jpg
+
+# Node modules & React Native builds (mobile apps)
+node_modules/
+mobile_admin/node_modules/
+mobile_admin/android/app/build/
+mobile_admin/android/.gradle/
+mobile_admin/ios/Pods/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+src/ir-attendance-*.json
+firebase_config.json
+test_openrouter.mjs
+PC-IR-ATT-update/
