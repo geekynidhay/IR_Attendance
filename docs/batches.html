@@ -8,11 +8,13 @@
   <link rel="stylesheet" href="style.css">
   <link rel="icon" type="image/png" href="assets/Icon.png">
   <style>
-    .filter-section { text-align: center; margin: 40px auto 20px auto; max-width: 900px; }
-    #companySelect { padding: 12px 20px; font-size: 1.1rem; border-radius: 8px; background: rgba(31, 40, 51, 0.8); color: #fff; border: 1px solid var(--accent-cyan); width: 100%; max-width: 500px; outline: none; cursor: pointer; font-family: 'Inter', sans-serif; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%2366fcf1" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat: no-repeat; background-position-x: 95%; background-position-y: 50%; }
-    .company-section { margin-top: 20px; margin-bottom: 20px; text-align: left; max-width: 900px; margin-left: auto; margin-right: auto; display: none; }
-    .company-title { color: var(--accent-cyan); font-size: 1.8rem; margin-bottom: 20px; border-bottom: 1px solid rgba(102, 252, 241, 0.2); padding-bottom: 10px; }
-    .batch-list { display: flex; flex-direction: column; gap: 15px; }
+    .accordion-container { max-width: 900px; margin: 40px auto; text-align: left; }
+    .accordion-btn { background-color: rgba(31, 40, 51, 0.8); color: var(--accent-cyan); cursor: pointer; padding: 18px 25px; width: 100%; text-align: left; border: 1px solid rgba(102, 252, 241, 0.2); outline: none; transition: 0.3s; font-size: 1.3rem; font-weight: 600; border-radius: 8px; margin-bottom: 5px; font-family: 'Inter', sans-serif; display: flex; justify-content: space-between; align-items: center; }
+    .accordion-btn.active, .accordion-btn:hover { background-color: rgba(102, 252, 241, 0.1); border-color: var(--accent-cyan); }
+    .accordion-btn:after { content: '\02795'; font-size: 1rem; color: var(--accent-cyan); }
+    .accordion-btn.active:after { content: "\2796"; }
+    .panel { padding: 0 15px; background-color: transparent; max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; margin-bottom: 15px; border-radius: 0 0 8px 8px; }
+    .batch-list { display: flex; flex-direction: column; gap: 15px; margin-top: 15px; margin-bottom: 15px; }
     .batch-item { background: rgba(31, 40, 51, 0.5); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 20px; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s; }
     .batch-item:hover { background: rgba(31, 40, 51, 0.9); border-color: rgba(102, 252, 241, 0.3); transform: translateX(5px); }
     .batch-info { text-align: left; }
@@ -31,98 +33,88 @@
       <br>
       <a href="index.html" class="btn-secondary" style="font-size: 0.9rem;">&larr; Back to Home</a>
     </header>
+    <div class="accordion-container">
+      <button class="accordion-btn">Banskari</button>
+      <div class="panel">
+        <div class="batch-list">
 
-    <div class="filter-section">
-      <select id="companySelect" onchange="filterCompany()">
-        <option value="all">Show All Companies</option>
-        <option value="company-0">Banskari</option>
-        <option value="company-1">Manglore</option>
-      </select>
-    </div>
-
-    <div class="company-section" id="company-0" style="display: block;">
-      <h3 class="company-title">Banskari</h3>
-      <div class="batch-list">
-
-        <div class="batch-item">
-          <div class="batch-info">
-            <div class="batch-name">45004.rar</div>
-            <div class="batch-meta">File Size: 45.7 MB</div>
+          <div class="batch-item">
+            <div class="batch-info">
+              <div class="batch-name">45004.rar</div>
+              <div class="batch-meta">File Size: 45.7 MB</div>
+            </div>
+            <a href="https://drive.google.com/uc?export=download&id=13mYj7NiiMYIOGptKh-O5rjaxcvfwIFO7" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
           </div>
-          <a href="https://drive.google.com/uc?export=download&id=13mYj7NiiMYIOGptKh-O5rjaxcvfwIFO7" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
         </div>
-
       </div>
-    </div>
+      <button class="accordion-btn">Manglore</button>
+      <div class="panel">
+        <div class="batch-list">
 
-    <div class="company-section" id="company-1" style="display: block;">
-      <h3 class="company-title">Manglore</h3>
-      <div class="batch-list">
-
-        <div class="batch-item">
-          <div class="batch-info">
-            <div class="batch-name">49125 - 13.30 To 19.30.zip</div>
-            <div class="batch-meta">File Size: 55.8 MB</div>
+          <div class="batch-item">
+            <div class="batch-info">
+              <div class="batch-name">49125 - 13.30 To 19.30.zip</div>
+              <div class="batch-meta">File Size: 55.8 MB</div>
+            </div>
+            <a href="https://drive.google.com/uc?export=download&id=1OyVcS54TZ-SXQv3YozNIyq5JoVjZCMlt" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
           </div>
-          <a href="https://drive.google.com/uc?export=download&id=1OyVcS54TZ-SXQv3YozNIyq5JoVjZCMlt" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
-        </div>
 
-        <div class="batch-item">
-          <div class="batch-info">
-            <div class="batch-name">49232 - 7.15 To 13.15.zip</div>
-            <div class="batch-meta">File Size: 28.3 MB</div>
+          <div class="batch-item">
+            <div class="batch-info">
+              <div class="batch-name">49232 - 7.15 To 13.15.zip</div>
+              <div class="batch-meta">File Size: 28.3 MB</div>
+            </div>
+            <a href="https://drive.google.com/uc?export=download&id=1zw9-vOpLbW_6FlUrz0dUOGCFlWGuKPZn" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
           </div>
-          <a href="https://drive.google.com/uc?export=download&id=1zw9-vOpLbW_6FlUrz0dUOGCFlWGuKPZn" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
-        </div>
 
-        <div class="batch-item">
-          <div class="batch-info">
-            <div class="batch-name">49240 - 13.30 To 19.30.zip</div>
-            <div class="batch-meta">File Size: 18.7 MB</div>
+          <div class="batch-item">
+            <div class="batch-info">
+              <div class="batch-name">49240 - 13.30 To 19.30.zip</div>
+              <div class="batch-meta">File Size: 18.7 MB</div>
+            </div>
+            <a href="https://drive.google.com/uc?export=download&id=1oED0qq5e4n68RDGlWPkeORKLamJwraEq" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
           </div>
-          <a href="https://drive.google.com/uc?export=download&id=1oED0qq5e4n68RDGlWPkeORKLamJwraEq" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
-        </div>
 
-        <div class="batch-item">
-          <div class="batch-info">
-            <div class="batch-name">49247 - 7.15 To 13.15.zip</div>
-            <div class="batch-meta">File Size: 36.7 MB</div>
+          <div class="batch-item">
+            <div class="batch-info">
+              <div class="batch-name">49247 - 7.15 To 13.15.zip</div>
+              <div class="batch-meta">File Size: 36.7 MB</div>
+            </div>
+            <a href="https://drive.google.com/uc?export=download&id=1JHxk_ZVercfqqIQqo9B8z8goKj_446LZ" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
           </div>
-          <a href="https://drive.google.com/uc?export=download&id=1JHxk_ZVercfqqIQqo9B8z8goKj_446LZ" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
-        </div>
 
-        <div class="batch-item">
-          <div class="batch-info">
-            <div class="batch-name">49308  - 7.00 To 14.00.zip</div>
-            <div class="batch-meta">File Size: 43.8 MB</div>
+          <div class="batch-item">
+            <div class="batch-info">
+              <div class="batch-name">49308  - 7.00 To 14.00.zip</div>
+              <div class="batch-meta">File Size: 43.8 MB</div>
+            </div>
+            <a href="https://drive.google.com/uc?export=download&id=1tT5O61NztBwB4gHQ9GGkT8DvURzLMeX7" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
           </div>
-          <a href="https://drive.google.com/uc?export=download&id=1tT5O61NztBwB4gHQ9GGkT8DvURzLMeX7" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
-        </div>
 
-        <div class="batch-item">
-          <div class="batch-info">
-            <div class="batch-name">49310 - 14.15 To 20.30.zip</div>
-            <div class="batch-meta">File Size: 43.7 MB</div>
+          <div class="batch-item">
+            <div class="batch-info">
+              <div class="batch-name">49310 - 14.15 To 20.30.zip</div>
+              <div class="batch-meta">File Size: 43.7 MB</div>
+            </div>
+            <a href="https://drive.google.com/uc?export=download&id=1D6dTW39EeLeoDZ9ZiRId3z4UMjl4RAAD" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
           </div>
-          <a href="https://drive.google.com/uc?export=download&id=1D6dTW39EeLeoDZ9ZiRId3z4UMjl4RAAD" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
-        </div>
 
-        <div class="batch-item">
-          <div class="batch-info">
-            <div class="batch-name">49316 - 7.00 To 14.00.zip</div>
-            <div class="batch-meta">File Size: 43.5 MB</div>
+          <div class="batch-item">
+            <div class="batch-info">
+              <div class="batch-name">49316 - 7.00 To 14.00.zip</div>
+              <div class="batch-meta">File Size: 43.5 MB</div>
+            </div>
+            <a href="https://drive.google.com/uc?export=download&id=1-qkop1Spgj28wjJC7fdKoew6N-2hYkio" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
           </div>
-          <a href="https://drive.google.com/uc?export=download&id=1-qkop1Spgj28wjJC7fdKoew6N-2hYkio" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
-        </div>
 
-        <div class="batch-item">
-          <div class="batch-info">
-            <div class="batch-name">49338  - 14.15 To 20.30.zip</div>
-            <div class="batch-meta">File Size: 42.6 MB</div>
+          <div class="batch-item">
+            <div class="batch-info">
+              <div class="batch-name">49338  - 14.15 To 20.30.zip</div>
+              <div class="batch-meta">File Size: 42.6 MB</div>
+            </div>
+            <a href="https://drive.google.com/uc?export=download&id=10_cfTz9FroZx6ZfTUjdE5aR5lwF0-3wD" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
           </div>
-          <a href="https://drive.google.com/uc?export=download&id=10_cfTz9FroZx6ZfTUjdE5aR5lwF0-3wD" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
         </div>
-
       </div>
     </div>
 
@@ -132,17 +124,17 @@
   </div>
 
   <script>
-    function filterCompany() {
-      var select = document.getElementById("companySelect");
-      var val = select.value;
-      var sections = document.getElementsByClassName("company-section");
-      for (var i = 0; i < sections.length; i++) {
-        if (val === "all" || sections[i].id === val) {
-          sections[i].style.display = "block";
+    var acc = document.getElementsByClassName("accordion-btn");
+    for (var i = 0; i < acc.length; i++) {
+      acc[i].addEventListener("click", function() {
+        this.classList.toggle("active");
+        var panel = this.nextElementSibling;
+        if (panel.style.maxHeight) {
+          panel.style.maxHeight = null;
         } else {
-          sections[i].style.display = "none";
+          panel.style.maxHeight = panel.scrollHeight + "px";
         }
-      }
+      });
     }
   </script>
 </body>
