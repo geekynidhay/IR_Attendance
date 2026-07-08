@@ -26,7 +26,7 @@ body {
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 60px 20px;
+  padding: 100px 20px 60px;
 }
 
 header {
@@ -191,9 +191,11 @@ h1 span {
   gap: 20px; 
   padding: 15px; 
   border-bottom: 1px solid rgba(102, 252, 241, 0.2); 
-  position: sticky; 
+  position: fixed; 
   top: 0; 
-  z-index: 100; 
+  left: 0;
+  width: 100%;
+  z-index: 1000; 
   backdrop-filter: blur(10px); 
   -webkit-backdrop-filter: blur(10px);
 }
