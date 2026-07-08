@@ -8,7 +8,9 @@
   <link rel="stylesheet" href="style.css">
   <link rel="icon" type="image/png" href="assets/Icon.png">
   <style>
-    .company-section { margin-top: 60px; margin-bottom: 20px; text-align: left; max-width: 900px; margin-left: auto; margin-right: auto; }
+    .filter-section { text-align: center; margin: 40px auto 20px auto; max-width: 900px; }
+    #companySelect { padding: 12px 20px; font-size: 1.1rem; border-radius: 8px; background: rgba(31, 40, 51, 0.8); color: #fff; border: 1px solid var(--accent-cyan); width: 100%; max-width: 500px; outline: none; cursor: pointer; font-family: 'Inter', sans-serif; appearance: none; -webkit-appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%2366fcf1" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat: no-repeat; background-position-x: 95%; background-position-y: 50%; }
+    .company-section { margin-top: 20px; margin-bottom: 20px; text-align: left; max-width: 900px; margin-left: auto; margin-right: auto; display: none; }
     .company-title { color: var(--accent-cyan); font-size: 1.8rem; margin-bottom: 20px; border-bottom: 1px solid rgba(102, 252, 241, 0.2); padding-bottom: 10px; }
     .batch-list { display: flex; flex-direction: column; gap: 15px; }
     .batch-item { background: rgba(31, 40, 51, 0.5); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 20px; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s; }
@@ -22,7 +24,7 @@
 </head>
 <body>
   <div class="container">
-    <header style="margin-bottom: 30px;">
+    <header>
       <a href="index.html"><img src="assets/Icon.png" alt="IR Attendance Logo" style="width: 80px;"></a>
       <h1 style="font-size: 2.5rem;">Sample <span>Batches</span></h1>
       <p class="subtitle">Download complete image archives to import directly into your local database.</p>
@@ -30,7 +32,14 @@
       <a href="index.html" class="btn-secondary" style="font-size: 0.9rem;">&larr; Back to Home</a>
     </header>
 
-    <div class="company-section">
+    <div class="filter-section">
+      <select id="companySelect" onchange="filterCompany()">
+        <option value="all">Show All Companies</option>
+        <option value="company-0">Manglore</option>
+      </select>
+    </div>
+
+    <div class="company-section" id="company-0" style="display: block;">
       <h3 class="company-title">Manglore</h3>
       <div class="batch-list">
 
@@ -105,5 +114,20 @@
       <p>&copy; 2026 IR Attendance Project. All Rights Reserved.</p>
     </footer>
   </div>
+
+  <script>
+    function filterCompany() {
+      var select = document.getElementById("companySelect");
+      var val = select.value;
+      var sections = document.getElementsByClassName("company-section");
+      for (var i = 0; i < sections.length; i++) {
+        if (val === "all" || sections[i].id === val) {
+          sections[i].style.display = "block";
+        } else {
+          sections[i].style.display = "none";
+        }
+      }
+    }
+  </script>
 </body>
 </html>
