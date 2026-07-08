@@ -14,6 +14,7 @@ build/
 dist/
 installer_output/
 *.spec
+!IR_Attendance.spec
 
 # Application Data & Temporary extraction folders
 logs/
