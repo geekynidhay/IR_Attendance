@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Batch Downloads - IR Attendance</title>
+  <title>Sample Batches - IR Attendance</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="icon" type="image/png" href="assets/Icon.png">
@@ -18,9 +18,9 @@
     .batch-item { background: rgba(31, 40, 51, 0.5); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 20px; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s; }
     .batch-item:hover { background: rgba(31, 40, 51, 0.9); border-color: rgba(102, 252, 241, 0.3); transform: translateX(5px); }
     .batch-info { text-align: left; }
-    .batch-name { font-size: 1.2rem; color: #fff; font-weight: 600; margin-bottom: 5px; }
+    .batch-name { font-size: 1.2rem; color: #fff; font-weight: 600; margin-bottom: 5px; word-break: break-all; }
     .batch-meta { font-size: 0.9rem; color: #888; }
-    .btn-download { background: transparent; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); padding: 8px 20px; border-radius: 20px; text-decoration: none; font-weight: 600; transition: all 0.2s; white-space: nowrap; }
+    .btn-download { background: transparent; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); padding: 8px 20px; border-radius: 20px; text-decoration: none; font-weight: 600; transition: all 0.2s; white-space: nowrap; margin-left: 10px; }
     .btn-download:hover { background: var(--accent-cyan); color: #0b0c10; box-shadow: 0 0 15px rgba(102, 252, 241, 0.4); }
   </style>
 </head>
@@ -28,25 +28,12 @@
   <div class="container">
     <header>
       <a href="index.html"><img src="assets/Icon.png" alt="IR Attendance Logo" style="width: 80px;"></a>
-      <h1 style="font-size: 2.5rem;">Sample <span>Batches</span></h1>
+      <h1 style="font-size: 2.5rem;">Sample Batches</h1>
       <p class="subtitle">Download complete image archives to import directly into your local database.</p>
       <br>
-      <a href="index.html" class="btn-secondary" style="font-size: 0.9rem;">&larr; Back to Home</a>
+      <a href="index.html" class="btn-secondary" style="font-size: 0.9rem;">&larr; Back</a>
     </header>
     <div class="accordion-container">
-      <button class="accordion-btn">Banskari</button>
-      <div class="panel">
-        <div class="batch-list">
-
-          <div class="batch-item">
-            <div class="batch-info">
-              <div class="batch-name">45004.rar</div>
-              <div class="batch-meta">File Size: 45.7 MB</div>
-            </div>
-            <a href="https://drive.google.com/uc?export=download&id=13mYj7NiiMYIOGptKh-O5rjaxcvfwIFO7" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
-          </div>
-        </div>
-      </div>
       <button class="accordion-btn">Manglore</button>
       <div class="panel">
         <div class="batch-list">
@@ -56,7 +43,7 @@
               <div class="batch-name">49125 - 13.30 To 19.30.zip</div>
               <div class="batch-meta">File Size: 55.8 MB</div>
             </div>
-            <a href="https://drive.google.com/uc?export=download&id=1OyVcS54TZ-SXQv3YozNIyq5JoVjZCMlt" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
+            <a href="https://drive.google.com/uc?export=download&id=1OyVcS54TZ-SXQv3YozNIyq5JoVjZCMlt" class="btn-download" target="_blank" rel="noopener">Download</a>
           </div>
 
           <div class="batch-item">
@@ -64,7 +51,7 @@
               <div class="batch-name">49232 - 7.15 To 13.15.zip</div>
               <div class="batch-meta">File Size: 28.3 MB</div>
             </div>
-            <a href="https://drive.google.com/uc?export=download&id=1zw9-vOpLbW_6FlUrz0dUOGCFlWGuKPZn" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
+            <a href="https://drive.google.com/uc?export=download&id=1zw9-vOpLbW_6FlUrz0dUOGCFlWGuKPZn" class="btn-download" target="_blank" rel="noopener">Download</a>
           </div>
 
           <div class="batch-item">
@@ -72,7 +59,7 @@
               <div class="batch-name">49240 - 13.30 To 19.30.zip</div>
               <div class="batch-meta">File Size: 18.7 MB</div>
             </div>
-            <a href="https://drive.google.com/uc?export=download&id=1oED0qq5e4n68RDGlWPkeORKLamJwraEq" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
+            <a href="https://drive.google.com/uc?export=download&id=1oED0qq5e4n68RDGlWPkeORKLamJwraEq" class="btn-download" target="_blank" rel="noopener">Download</a>
           </div>
 
           <div class="batch-item">
@@ -80,7 +67,7 @@
               <div class="batch-name">49247 - 7.15 To 13.15.zip</div>
               <div class="batch-meta">File Size: 36.7 MB</div>
             </div>
-            <a href="https://drive.google.com/uc?export=download&id=1JHxk_ZVercfqqIQqo9B8z8goKj_446LZ" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
+            <a href="https://drive.google.com/uc?export=download&id=1JHxk_ZVercfqqIQqo9B8z8goKj_446LZ" class="btn-download" target="_blank" rel="noopener">Download</a>
           </div>
 
           <div class="batch-item">
@@ -88,7 +75,7 @@
               <div class="batch-name">49308  - 7.00 To 14.00.zip</div>
               <div class="batch-meta">File Size: 43.8 MB</div>
             </div>
-            <a href="https://drive.google.com/uc?export=download&id=1tT5O61NztBwB4gHQ9GGkT8DvURzLMeX7" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
+            <a href="https://drive.google.com/uc?export=download&id=1tT5O61NztBwB4gHQ9GGkT8DvURzLMeX7" class="btn-download" target="_blank" rel="noopener">Download</a>
           </div>
 
           <div class="batch-item">
@@ -96,7 +83,7 @@
               <div class="batch-name">49310 - 14.15 To 20.30.zip</div>
               <div class="batch-meta">File Size: 43.7 MB</div>
             </div>
-            <a href="https://drive.google.com/uc?export=download&id=1D6dTW39EeLeoDZ9ZiRId3z4UMjl4RAAD" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
+            <a href="https://drive.google.com/uc?export=download&id=1D6dTW39EeLeoDZ9ZiRId3z4UMjl4RAAD" class="btn-download" target="_blank" rel="noopener">Download</a>
           </div>
 
           <div class="batch-item">
@@ -104,7 +91,7 @@
               <div class="batch-name">49316 - 7.00 To 14.00.zip</div>
               <div class="batch-meta">File Size: 43.5 MB</div>
             </div>
-            <a href="https://drive.google.com/uc?export=download&id=1-qkop1Spgj28wjJC7fdKoew6N-2hYkio" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
+            <a href="https://drive.google.com/uc?export=download&id=1-qkop1Spgj28wjJC7fdKoew6N-2hYkio" class="btn-download" target="_blank" rel="noopener">Download</a>
           </div>
 
           <div class="batch-item">
@@ -112,7 +99,20 @@
               <div class="batch-name">49338  - 14.15 To 20.30.zip</div>
               <div class="batch-meta">File Size: 42.6 MB</div>
             </div>
-            <a href="https://drive.google.com/uc?export=download&id=10_cfTz9FroZx6ZfTUjdE5aR5lwF0-3wD" class="btn-download" target="_blank" rel="noopener">Download Zip</a>
+            <a href="https://drive.google.com/uc?export=download&id=10_cfTz9FroZx6ZfTUjdE5aR5lwF0-3wD" class="btn-download" target="_blank" rel="noopener">Download</a>
+          </div>
+        </div>
+      </div>
+      <button class="accordion-btn">Banskari</button>
+      <div class="panel">
+        <div class="batch-list">
+
+          <div class="batch-item">
+            <div class="batch-info">
+              <div class="batch-name">45004.rar</div>
+              <div class="batch-meta">File Size: 45.7 MB</div>
+            </div>
+            <a href="https://drive.google.com/uc?export=download&id=13mYj7NiiMYIOGptKh-O5rjaxcvfwIFO7" class="btn-download" target="_blank" rel="noopener">Download</a>
           </div>
         </div>
       </div>

@@ -3,13 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IR Attendance</title>
+  <title>IR Attendance - Official Downloads</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="icon" type="image/png" href="assets/Icon.png">
+  <style>
+    /* Top Navigation Bar */
+    .topnav { background-color: rgba(31, 40, 51, 0.9); overflow: hidden; display: flex; justify-content: center; gap: 20px; padding: 15px; border-bottom: 1px solid rgba(102, 252, 241, 0.2); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); }
+    .topnav a { color: #c5c6c7; text-decoration: none; font-size: 1rem; font-weight: 600; transition: color 0.3s; }
+    .topnav a:hover, .topnav a.active { color: var(--accent-cyan); }
+    
+    .card-actions { display: flex; flex-direction: column; gap: 15px; margin-top: 25px; }
+  </style>
 </head>
 <body>
-  <div class="container">
+  <div class="topnav">
+    <a href="index.html" class="active">Home</a>
+    <a href="windows_versions.html">Windows App</a>
+    <a href="android_versions.html">Android App</a>
+    <a href="rd_services.html">RD Services</a>
+    <a href="batches.html">Batches</a>
+  </div>
+
+  <div class="container" style="margin-top: 40px;">
     <header>
       <img src="assets/Icon.png" alt="IR Attendance Logo">
       <h1>IR <span>Attendance</span></h1>
@@ -22,42 +38,41 @@
       <div class="card">
         <h3>Windows Desktop</h3>
         <p>Full suite including AI Attendance, Manual Processing, and JPG Batch Splitting.</p>
-        <a href="https://drive.google.com/drive/folders/1gU115Gp5J3Pk8a7JGlzHOTJIk5lLZAwS?usp=share_link" class="btn" target="_blank" rel="noopener">Download .exe</a>
+        <div class="card-actions">
+          <a href="https://drive.google.com/uc?export=download&id=1DYnGOMuKHOkglNaSVqO3PV0Ye_ZHZhAT" class="btn" target="_blank" rel="noopener">Download Latest (.exe)</a>
+          <a href="windows_versions.html" class="btn-secondary">Previous Versions</a>
+        </div>
       </div>
 
       <!-- Android App -->
       <div class="card">
         <h3>Android Mobile</h3>
         <p>Companion app for mobile attendance taking and wireless computer mirroring.</p>
-        <a href="https://drive.google.com/drive/folders/1ZlNoX8R73riswZOoIHTL9LO1Ftt-0j0V?usp=share_link" class="btn" target="_blank" rel="noopener">Download .apk</a>
+        <div class="card-actions">
+          <a href="https://drive.google.com/uc?export=download&id=1Pt1cGdQEnsEthzg7rlg3tq5vo7u63IGL" class="btn" target="_blank" rel="noopener">Download Latest (.apk)</a>
+          <a href="android_versions.html" class="btn-secondary">Previous Versions</a>
+        </div>
       </div>
     </div>
-
-    <h2 class="section-title">RD Services & Drivers</h2>
-    <div class="rd-grid">
-      <div class="rd-card">
-        <h4>All RD Services</h4>
-        <p>Browse and download biometric drivers directly from our cloud storage.</p>
-        <a href="https://drive.google.com/drive/folders/1j-iCSlebGkJ9qeHB_o2afTfXZTJlk_TS?usp=share_link" class="btn-secondary" target="_blank" rel="noopener">Open Folder</a>
-      </div>
-      <div class="rd-card">
-        <h4>Mantra RD Service</h4>
-        <p>Official drivers for Mantra MFS100 / MFS110 fingerprint scanners.</p>
-        <a href="https://drive.google.com/drive/folders/1j-iCSlebGkJ9qeHB_o2afTfXZTJlk_TS?usp=share_link" class="btn-secondary" target="_blank" rel="noopener">Download Mantra</a>
-      </div>
-      <div class="rd-card">
-        <h4>Morpho RD Service</h4>
-        <p>Official drivers for Morpho MSO1300 E3 / E2 biometric devices.</p>
-        <a href="https://drive.google.com/drive/folders/1j-iCSlebGkJ9qeHB_o2afTfXZTJlk_TS?usp=share_link" class="btn-secondary" target="_blank" rel="noopener">Download Morpho</a>
-      </div>
-    </div>
-
-    <h2 class="section-title">Sample Batches</h2>
+    
+    <h2 class="section-title" style="margin-top: 60px;">Resources</h2>
     <div class="cards" style="margin-bottom: 40px;">
-      <div class="card" style="width: 100%; max-width: 800px; padding: 40px;">
-        <h3>Download Image Batches</h3>
-        <p>Ready-to-use zip archives of image batches. Download these and use the <strong>"📥 Import Batch (Archive)"</strong> button inside the IR Attendance app to instantly load them into your local database.</p>
-        <a href="batches.html" class="btn" rel="noopener">Browse Batches</a>
+      <!-- RD Services -->
+      <div class="card">
+        <h3>RD Services</h3>
+        <p>Browse and download biometric drivers directly from our cloud storage.</p>
+        <div class="card-actions">
+          <a href="rd_services.html" class="btn" rel="noopener">Browse Drivers</a>
+        </div>
+      </div>
+      
+      <!-- Batches -->
+      <div class="card">
+        <h3>Sample Batches</h3>
+        <p>Ready-to-use zip archives of image batches. Import them instantly into your database.</p>
+        <div class="card-actions">
+          <a href="batches.html" class="btn" rel="noopener">Browse Batches</a>
+        </div>
       </div>
     </div>
 

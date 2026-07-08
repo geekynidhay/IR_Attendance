@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RD Services & Drivers - IR Attendance</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="assets/Icon.png">
+  <style>
+    .accordion-container { max-width: 900px; margin: 40px auto; text-align: left; }
+    .accordion-btn { background-color: rgba(31, 40, 51, 0.8); color: var(--accent-cyan); cursor: pointer; padding: 18px 25px; width: 100%; text-align: left; border: 1px solid rgba(102, 252, 241, 0.2); outline: none; transition: 0.3s; font-size: 1.3rem; font-weight: 600; border-radius: 8px; margin-bottom: 5px; font-family: 'Inter', sans-serif; display: flex; justify-content: space-between; align-items: center; }
+    .accordion-btn.active, .accordion-btn:hover { background-color: rgba(102, 252, 241, 0.1); border-color: var(--accent-cyan); }
+    .accordion-btn:after { content: '\02795'; font-size: 1rem; color: var(--accent-cyan); }
+    .accordion-btn.active:after { content: "\2796"; }
+    .panel { padding: 0 15px; background-color: transparent; max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; margin-bottom: 15px; border-radius: 0 0 8px 8px; }
+    .batch-list { display: flex; flex-direction: column; gap: 15px; margin-top: 15px; margin-bottom: 15px; }
+    .batch-item { background: rgba(31, 40, 51, 0.5); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 20px; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s; }
+    .batch-item:hover { background: rgba(31, 40, 51, 0.9); border-color: rgba(102, 252, 241, 0.3); transform: translateX(5px); }
+    .batch-info { text-align: left; }
+    .batch-name { font-size: 1.2rem; color: #fff; font-weight: 600; margin-bottom: 5px; word-break: break-all; }
+    .batch-meta { font-size: 0.9rem; color: #888; }
+    .btn-download { background: transparent; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); padding: 8px 20px; border-radius: 20px; text-decoration: none; font-weight: 600; transition: all 0.2s; white-space: nowrap; margin-left: 10px; }
+    .btn-download:hover { background: var(--accent-cyan); color: #0b0c10; box-shadow: 0 0 15px rgba(102, 252, 241, 0.4); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <a href="index.html"><img src="assets/Icon.png" alt="IR Attendance Logo" style="width: 80px;"></a>
+      <h1 style="font-size: 2.5rem;">RD Services & Drivers</h1>
+      <p class="subtitle">Browse and download biometric drivers (Mantra, Morpho, etc.).</p>
+      <br>
+      <a href="index.html" class="btn-secondary" style="font-size: 0.9rem;">&larr; Back</a>
+    </header>
+    <div class="accordion-container">
+      <button class="accordion-btn">BioEnable</button>
+      <div class="panel">
+        <div class="batch-list">
+
+          <div class="batch-item">
+            <div class="batch-info">
+              <div class="batch-name">BioEnable RD Service.zip</div>
+              <div class="batch-meta">File Size: 53.1 MB</div>
+            </div>
+            <a href="https://drive.google.com/uc?export=download&id=1rPFaLwHXGk08Gg4D2cqUd9RUYlKEm2Xu" class="btn-download" target="_blank" rel="noopener">Download</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer style="margin-top: 60px;">
+      <p>&copy; 2026 IR Attendance Project. All Rights Reserved.</p>
+    </footer>
+  </div>
+
+  <script>
+    var acc = document.getElementsByClassName("accordion-btn");
+    for (var i = 0; i < acc.length; i++) {
+      acc[i].addEventListener("click", function() {
+        this.classList.toggle("active");
+        var panel = this.nextElementSibling;
+        if (panel.style.maxHeight) {
+          panel.style.maxHeight = null;
+        } else {
+          panel.style.maxHeight = panel.scrollHeight + "px";
+        }
+      });
+    }
+  </script>
+</body>
+</html>
