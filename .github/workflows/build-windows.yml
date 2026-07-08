@@ -23,6 +23,9 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
+      - name: Install Tesseract OCR
+        run: choco install tesseract -y
+
       - name: Inject Secrets
         env:
           FIREBASE_CONFIG: ${{ secrets.FIREBASE_CONFIG }}
