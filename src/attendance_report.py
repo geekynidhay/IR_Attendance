@@ -13,7 +13,8 @@ from pathlib import Path
 from datetime import datetime, date
 
 
-REPORTS_DIR = Path("/Users/nidhay/Desktop/IRIS Data/Reports")
+from config import DATA_DIR
+REPORTS_DIR = DATA_DIR / "Reports"
 
 
 def _ensure_reports_dir():

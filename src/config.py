@@ -3,7 +3,16 @@ Configuration management for IR Attendance application
 """
 import json
 import os
+import sys
 from pathlib import Path
+
+def get_data_dir():
+    if sys.platform == "win32":
+        return Path("C:/IR Attendance")
+    else:
+        return Path("/Users/nidhay/Desktop/IRIS Data")
+
+DATA_DIR = get_data_dir()
 
 class Config:
     """Manages application configuration and settings"""
@@ -12,12 +21,7 @@ class Config:
         import sys
         
         # Determine base directory depending on OS
-        if sys.platform == "darwin":
-            self.base_path = Path.home() / "Library" / "Application Support" / "IR_Attendance"
-        elif sys.platform == "win32":
-            self.base_path = Path("/Users/nidhay/Desktop/IRIS Data")
-        else:
-            self.base_path = Path.home() / ".ir_attendance"
+        self.base_path = DATA_DIR
             
         self.base_path.mkdir(parents=True, exist_ok=True)
         self.config_file = self.base_path / "config.json"
@@ -28,7 +32,7 @@ class Config:
         """Load configuration from JSON file"""
         default_config = {
             "last_raw_path": "",
-            "last_batch_path": "/Users/nidhay/Desktop/IRIS Data",
+            "last_batch_path": str(DATA_DIR),
             "last_pdf_path": "",
             "split_pos": 50,
             "brightness": 100,

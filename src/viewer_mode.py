@@ -31,7 +31,8 @@ class ViewerMode:
         self.frame = ttk.Frame(parent)
         
         # Default Data Directory
-        self.data_dir = Path("/Users/nidhay/Desktop/IRIS Data")
+        from config import DATA_DIR
+        self.data_dir = DATA_DIR
         if not self.data_dir.exists():
             try:
                 self.data_dir.mkdir(parents=True, exist_ok=True)

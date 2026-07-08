@@ -292,7 +292,8 @@ class IRAttendanceApp:
 
         
         # Ensure default directory exists
-        os.makedirs("/Users/nidhay/Desktop/IRIS Data", exist_ok=True)
+        from config import DATA_DIR
+        os.makedirs(DATA_DIR, exist_ok=True)
         
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         
@@ -435,6 +436,15 @@ class IRAttendanceApp:
                                       width=35, height=2)
         self.btn_cloud.pack()
         
+        # Import Batch Button
+        self.import_batch_frame = ttk.Frame(center_frame, padding=5)
+        self.import_batch_frame.pack()
+        self.btn_import = ModernButton(self.import_batch_frame, text="📥 Import Batch (Archive)", 
+                                      command=self.import_batch,
+                                      bg='#8E24AA', hover_bg='#7B1FA2', fg='white',
+                                      width=35, height=2)
+        self.btn_import.pack()
+        
         ttk.Label(center_frame, text="Select a mode to begin",
                  style='Subtitle.TLabel').pack(pady=10)
         
@@ -495,6 +505,49 @@ Hotkey: Ctrl+Space to bring window to focus from any application
             messagebox.showinfo("Success", "Google Drive connected successfully for automatic sync!")
         else:
             messagebox.showerror("Error", f"Failed to connect: {msg}")
+            
+    def import_batch(self):
+        """Import a batch archive from IR Admin Utility"""
+        from tkinter import filedialog, messagebox
+        import threading
+        import sys
+        
+        try:
+            from system_utils import SystemUtils
+        except ImportError:
+            sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+            from system_utils import SystemUtils
+            
+        filepath = filedialog.askopenfilename(
+            title="Select Batch Archive (Output from Admin Utility)",
+            filetypes=[
+                ("Archive files", "*.zip *.rar *.7z *.tar *.gz *.tgz *.bz2 *.xz"),
+                ("All files", "*.*")
+            ]
+        )
+        if not filepath:
+            return
+            
+        # Temporarily disable button
+        original_text = self.btn_import.cget("text")
+        self.btn_import.config(text="⏳ Extracting... Please wait", state=tk.DISABLED)
+        
+        def _extract():
+            try:
+                # Use standard target directory consistent with config
+                from config import DATA_DIR
+                dest_dir = str(DATA_DIR)
+                
+                SystemUtils.extract_archive(filepath, dest_dir)
+                
+                # Re-enable button in main thread
+                self.root.after(0, lambda: self.btn_import.config(text=original_text, state=tk.NORMAL))
+                self.root.after(0, lambda: messagebox.showinfo("Success", f"Batch successfully imported into your database!\nIt will now appear in your Mode dropdowns."))
+            except Exception as e:
+                self.root.after(0, lambda: self.btn_import.config(text=original_text, state=tk.NORMAL))
+                self.root.after(0, lambda: messagebox.showerror("Error", f"Failed to import batch:\n{e}"))
+                
+        threading.Thread(target=_extract, daemon=True).start()
     def open_manual_menu(self):
         """Open Manual Mode selection screen"""
         self.menu_frame.pack_forget()

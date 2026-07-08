@@ -12,8 +12,9 @@ DEFAULT_DB_URL = "https://attendance-68878-default-rtdb.asia-southeast1.firebase
 DEFAULT_SECRET = "apng5Iuu7ijd8QYZLTj9ZZ4UGsmYE6wLaenzhFRx"
 
 def get_firebase_credentials():
-    # Try to load from /Users/nidhay/Desktop/IRIS Data if it exists (for future expandability)
-    config_path = Path("/Users/nidhay/Desktop/IRIS Data/firebase_config.json")
+    # Try to load from DATA_DIR if it exists (for future expandability)
+    from config import DATA_DIR
+    config_path = DATA_DIR / "firebase_config.json"
     if config_path.exists():
         try:
             with open(config_path, 'r') as f:

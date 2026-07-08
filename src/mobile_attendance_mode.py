@@ -42,7 +42,8 @@ class MobileAttendanceMode:
         self.lm               = license_manager
 
         self.frame    = ttk.Frame(parent)
-        self.data_dir = Path("/Users/nidhay/Desktop/IRIS Data")
+        from config import DATA_DIR
+        self.data_dir = DATA_DIR
 
         # Image state
         self.current_images      = []
