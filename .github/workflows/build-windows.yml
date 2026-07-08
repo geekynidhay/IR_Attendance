@@ -23,6 +23,14 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
+      - name: Inject Secrets
+        env:
+          FIREBASE_CONFIG: ${{ secrets.FIREBASE_CONFIG }}
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+        run: |
+          python -c "import os; open('firebase_config.json', 'w').write(os.environ.get('FIREBASE_CONFIG', '{}'))"
+          python -c "import os; open('src/ir-attendance-497712-b3ae57837200.json', 'w').write(os.environ.get('GCP_CREDENTIALS', '{}'))"
+
       - name: Build Executable
         run: pyinstaller IR_Attendance.spec
 
