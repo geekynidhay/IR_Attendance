@@ -227,7 +227,7 @@ def generate_index_html(latest_win, latest_and):
       
       <!-- Batches -->
       <div class="card">
-        <h3>Sample Batches</h3>
+        <h3>Batches</h3>
         <p>Ready-to-use zip archives of image batches. Import them instantly into your database.</p>
         <div class="card-actions">
           <a href="batches.html" class="btn" rel="noopener">Browse Batches</a>
@@ -303,7 +303,7 @@ def run_sync(log_cb=print):
     # 3. Generate Accordion Pages
     log_cb("\nGenerating pages...")
     pages = {
-        "batches.html": generate_accordion_page("Sample Batches", "Download complete image archives to import directly into your local database.", batches_data),
+        "batches.html": generate_accordion_page("Batches", "Download complete image archives to import directly into your local database.", batches_data),
         "windows_versions.html": generate_accordion_page("Windows App Versions", "Browse and download previous versions of the IR Attendance Windows Desktop application.", win_data),
         "android_versions.html": generate_accordion_page("Android App Versions", "Browse and download previous versions of the IR Attendance Android Mobile application.", and_data),
         "rd_services.html": generate_accordion_page("RD Services & Drivers", "Browse and download biometric drivers (Mantra, Morpho, etc.).", rd_data)
