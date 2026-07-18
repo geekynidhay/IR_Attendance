@@ -18,7 +18,8 @@ FOLDERS = {
     "Batches": "1f0_1H7xeBr3cxIbp6-9osNijNMHmEM6C",
     "WindowsApp": "1gU115Gp5J3Pk8a7JGlzHOTJIk5lLZAwS",
     "AndroidApp": "1ZlNoX8R73riswZOoIHTL9LO1Ftt-0j0V",
-    "RDServices": "1j-iCSlebGkJ9qeHB_o2afTfXZTJlk_TS"
+    "RDServices": "1j-iCSlebGkJ9qeHB_o2afTfXZTJlk_TS",
+    "OtherSoftware": "107sXfWBqBa4tG2KkQqyus8njbCr1xKZi"
 }
 
 DOCS_DIR = Path(__file__).parent.parent / "docs"
@@ -158,7 +159,80 @@ def generate_accordion_page(title, subtitle, data, back_link="index.html"):
 """
     return html
 
+def generate_flat_page(title, subtitle, files, back_link="index.html"):
+    """Generate a simple flat-list HTML page for folders whose files sit directly inside (no subfolders)."""
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{title} - IR Attendance</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="icon" type="image/png" href="assets/Icon.png">
+  <style>
+    .software-list {{ max-width: 900px; margin: 40px auto; text-align: left; display: flex; flex-direction: column; gap: 15px; }}
+    .software-item {{ background: rgba(31, 40, 51, 0.5); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 20px 25px; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s; }}
+    .software-item:hover {{ background: rgba(31, 40, 51, 0.9); border-color: rgba(102, 252, 241, 0.3); transform: translateX(5px); }}
+    .software-info {{ text-align: left; }}
+    .software-name {{ font-size: 1.2rem; color: #fff; font-weight: 600; margin-bottom: 5px; word-break: break-all; }}
+    .software-meta {{ font-size: 0.9rem; color: #888; }}
+    .btn-download {{ background: transparent; color: var(--accent-cyan); border: 1px solid var(--accent-cyan); padding: 10px 24px; border-radius: 20px; text-decoration: none; font-weight: 600; transition: all 0.2s; white-space: nowrap; margin-left: 15px; }}
+    .btn-download:hover {{ background: var(--accent-cyan); color: #0b0c10; box-shadow: 0 0 15px rgba(102, 252, 241, 0.4); }}
+  </style>
+</head>
+<body>
+  <div class="topnav">
+    <a href="index.html">Home</a>
+    <a href="windows_versions.html">Windows App</a>
+    <a href="android_versions.html">Android App</a>
+    <a href="rd_services.html">RD Services</a>
+    <a href="batches.html">Batches</a>
+    <a href="other_software.html" class="active">Other Software</a>
+  </div>
+  <div class="container">
+    <header>
+      <a href="index.html"><img src="assets/Icon.png" alt="IR Attendance Logo" style="width: 80px;"></a>
+      <h1 style="font-size: 2.5rem;">{title}</h1>
+      <p class="subtitle">{subtitle}</p>
+      <br>
+      <a href="{back_link}" class="btn-secondary" style="font-size: 0.9rem;">&larr; Back</a>
+    </header>
+"""
+
+    if not files:
+        html += """
+    <div style="text-align: center; margin-top: 50px;">
+        <p>No files found. Check your Google Drive folders!</p>
+    </div>
+"""
+    else:
+        html += '    <div class="software-list">\n'
+        for f in files:
+            download_link = f"https://drive.google.com/uc?export=download&id={f['id']}"
+            html += f"""
+      <div class="software-item">
+        <div class="software-info">
+          <div class="software-name">{f['name']}</div>
+          <div class="software-meta">File Size: {format_bytes(f.get('size', 0))}</div>
+        </div>
+        <a href="{download_link}" class="btn-download" target="_blank" rel="noopener">Download</a>
+      </div>
+"""
+        html += '    </div>\n'
+
+    html += """
+    <footer style="margin-top: 60px;">
+      <p>&copy; 2026 IR Attendance Project. All Rights Reserved.</p>
+    </footer>
+  </div>
+</body>
+</html>
+"""
+    return html
+
 def generate_index_html(latest_win, latest_and):
+
     """Generate the main index.html file with a top nav and dynamic latest links."""
     win_link = f"https://drive.google.com/uc?export=download&id={latest_win}" if latest_win else "windows_versions.html"
     and_link = f"https://drive.google.com/uc?export=download&id={latest_and}" if latest_and else "android_versions.html"
@@ -317,6 +391,14 @@ def run_sync(log_cb=print):
         log_cb(f"Failed to fetch RD Services: {e}")
         fetch_errors.append("RDServices")
 
+    log_cb("Fetching Other Software...")
+    other_sw_files = None
+    try:
+        other_sw_files = get_files(svc, FOLDERS["OtherSoftware"])
+    except Exception as e:
+        log_cb(f"Failed to fetch Other Software: {e}")
+        fetch_errors.append("OtherSoftware")
+
     if fetch_errors:
         log_cb(f"\n⚠ WARNING: {len(fetch_errors)} folder(s) failed to fetch: {', '.join(fetch_errors)}")
         log_cb("Skipping overwrite of pages that could not be fetched to preserve existing content.")
@@ -327,7 +409,8 @@ def run_sync(log_cb=print):
         "batches.html": (batches_data, generate_accordion_page("Batches", "Download complete image archives to import directly into your local database.", batches_data or {})),
         "windows_versions.html": (win_data, generate_accordion_page("Windows App Versions", "Browse and download previous versions of the IR Attendance Windows Desktop application.", win_data or {})),
         "android_versions.html": (and_data, generate_accordion_page("Android App Versions", "Browse and download previous versions of the IR Attendance Android Mobile application.", and_data or {})),
-        "rd_services.html": (rd_data, generate_accordion_page("RD Services & Drivers", "Browse and download biometric drivers (Mantra, Morpho, etc.).", rd_data or {}))
+        "rd_services.html": (rd_data, generate_accordion_page("RD Services & Drivers", "Browse and download biometric drivers (Mantra, Morpho, etc.).", rd_data or {})),
+        "other_software.html": (other_sw_files, generate_flat_page("Other Software", "Additional utility tools and companion software for the IR Attendance ecosystem.", other_sw_files or []))
     }
     
     for filename, (data, html) in pages.items():
