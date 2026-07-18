@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.env
+
+# Build / Distribution
+build/
+dist/
+installer_output/
+*.spec
+
+# Mobile / Node
+mobile_admin/node_modules/
+mobile_admin/.expo/
+mobile_admin/android/app/build/
+mobile_admin/android/.gradle/
+mobile_admin/ios/Pods/
+mobile_admin/ios/build/
+
+# Ignore local directories and files
+logs/
+scratch/
+mobile_mirror/
+platform-tools/
+*.apk
+
+# Original ignores but relative
+mobile_mirror.zip
+
+# Secrets and Configs
+firebase_config.json
+
+# OS specific
+.DS_Store
+Thumbs.db

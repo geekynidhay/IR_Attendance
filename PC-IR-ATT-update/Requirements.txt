@@ -1,0 +1,17 @@
+Pillow>=10.0.0
+pywin32>=305
+keyboard>=0.13.5
+pyperclip
+requests>=1.8.2
+flask
+opencv-python>=4.8.0
+pytesseract>=0.3.10
+numpy>=1.24.0
+pymupdf>=1.23.0
+cryptography>=41.0.0
+pyautogui
+openpyxl>=3.1.0
+tkcalendar>=1.6.0
+google-api-python-client>=2.0.0
+google-auth-httplib2>=0.4.0
+google-auth-oauthlib>=1.0.0

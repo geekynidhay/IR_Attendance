@@ -1,0 +1,1481 @@
+{
+    "last_raw_path": "",
+    "last_batch_path": "C:\\IR Attendance\\Z Morning 7 AM To 2 PM",
+    "last_pdf_path": "C:/Users/PC-1/Downloads/KUSHAL 44416.pdf",
+    "split_pos": 50,
+    "brightness": 100,
+    "crop_enabled": false,
+    "crop_left": 0,
+    "crop_top": 0,
+    "crop_right": 100,
+    "crop_bottom": 100,
+    "license_user": "JHKJHJK",
+    "global_default_brightness": "125",
+    "subfolder_settings": {
+        "00826849": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "07890701": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "08379123": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "15102558": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "24501218": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "37178011": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "01319943": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "03848185": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "06363119": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "07172413": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "10192289": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "11798373": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "14133637": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "15161955": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "17168058": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "23029170": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "23619464": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "34050731": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "40696536": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "47204349": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "5161379": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "55474305": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "71602586": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "80675977": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "8122101": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "81995142": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "88286429": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "90903018": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "95024629": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "96658540": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "28619464": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "70192289": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "79102558": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "81227177": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "91671379": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "99474305": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "00570846": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": true
+        },
+        "01055402": {
+            "brightness": 118,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": true
+        },
+        "01951444": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": true
+        },
+        "01969785": {
+            "brightness": 119,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": true
+        },
+        "05847250": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": false
+        },
+        "09912258": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "12066091": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 7,
+            "has_override": false
+        },
+        "12397962": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 5,
+            "has_override": true
+        },
+        "16071407": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 0,
+            "has_override": true
+        },
+        "17734973": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "18956435": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "19030117": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": false
+        },
+        "19847089": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": false
+        },
+        "21199229": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "22097976": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "05754956": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "07549751": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "10531667": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "11174640": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "12839148": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "18331388": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "29647694": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": false
+        },
+        "82737288": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "73093012": {
+            "brightness": 100,
+            "zoom": 100
+        },
+        "01101153": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 0,
+            "has_override": true
+        },
+        "38816826": {
+            "brightness": 118,
+            "zoom": 100,
+            "image_index": 6
+        },
+        "65573051": {
+            "brightness": 100,
+            "zoom": 70
+        },
+        "27535821": {
+            "brightness": 148,
+            "zoom": 100
+        },
+        "34481187": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "01519866": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 7,
+            "has_override": false
+        },
+        "53404392": {
+            "brightness": 146,
+            "zoom": 100,
+            "image_index": 4
+        },
+        "07675101": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": true
+        },
+        "03840387": {
+            "brightness": 150,
+            "zoom": 100,
+            "image_index": 0,
+            "has_override": true
+        },
+        "06886827": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "09337390": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 0,
+            "has_override": false
+        },
+        "26036668": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 0
+        },
+        "33225859": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 0
+        },
+        "47026529": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 0,
+            "has_override": true
+        },
+        "20469402": {
+            "brightness": 139,
+            "zoom": 100,
+            "image_index": 4,
+            "has_override": true
+        },
+        "22050414": {
+            "brightness": 120,
+            "zoom": 100,
+            "image_index": 2
+        },
+        "26663189": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 0
+        },
+        "27373897": {
+            "brightness": 140,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "71808584": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 7,
+            "has_override": false
+        },
+        "38707239": {
+            "brightness": 150,
+            "zoom": 100,
+            "image_index": 7,
+            "has_override": true
+        },
+        "28373482": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 0
+        },
+        "29359186": {
+            "brightness": 140,
+            "zoom": 100,
+            "image_index": 1
+        },
+        "97559419": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 6,
+            "has_override": false
+        },
+        "07060810": {
+            "brightness": 140,
+            "zoom": 100,
+            "image_index": 6,
+            "has_override": false
+        },
+        "13021316": {
+            "brightness": 116,
+            "zoom": 100,
+            "image_index": 0,
+            "has_override": true
+        },
+        "02618264": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 0
+        },
+        "84877477": {
+            "brightness": 150,
+            "zoom": 100,
+            "image_index": 2
+        },
+        "82289207": {
+            "brightness": 130,
+            "zoom": 100,
+            "image_index": 0
+        },
+        "16261709": {
+            "brightness": 150,
+            "zoom": 100,
+            "image_index": 0
+        },
+        "01754742": {
+            "brightness": 140,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": false
+        },
+        "77760307": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "75259800": {
+            "brightness": 100,
+            "zoom": 60,
+            "image_index": 5,
+            "has_override": false
+        },
+        "64111140": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 7,
+            "has_override": false
+        },
+        "52632379": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 7,
+            "has_override": false
+        },
+        "91183827": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": false
+        },
+        "04617007": {
+            "brightness": 114,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": true
+        },
+        "13403494": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": true
+        },
+        "19942858": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "23889392": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 4,
+            "has_override": false
+        },
+        "33965841": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "36272543": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "40431571": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "41022882": {
+            "brightness": 110,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": true
+        },
+        "42989204": {
+            "brightness": 110,
+            "zoom": 100,
+            "image_index": 5,
+            "has_override": true
+        },
+        "55935264": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "56544522": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "59231377": {
+            "brightness": 110,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": true
+        },
+        "75370596": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "90809304": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "04644644": {
+            "brightness": 110,
+            "zoom": 100,
+            "image_index": 6,
+            "has_override": true
+        },
+        "05609748": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": true
+        },
+        "07006685": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": true
+        },
+        "08524685": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": true
+        },
+        "09887134": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": true
+        },
+        "13370218": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": true
+        },
+        "18220564": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "22485715": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "38151855": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "44333491": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 5,
+            "has_override": true
+        },
+        "55236937": {
+            "brightness": 110,
+            "zoom": 100,
+            "image_index": 10,
+            "has_override": true
+        },
+        "56289185": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "56894799": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "57631407": {
+            "brightness": 110,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": true
+        },
+        "58181084": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": true
+        },
+        "59039259": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": false
+        },
+        "67143891": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 5,
+            "has_override": false
+        },
+        "74162594": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": false
+        },
+        "82205183": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "85930648": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "89165933": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": false
+        },
+        "91318418": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": false
+        },
+        "32932431": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "38333525": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": false
+        },
+        "42352572": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 4,
+            "has_override": false
+        },
+        "48668687": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "54712091": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "57619369": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "67105354": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "73964324": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": true
+        },
+        "74225738": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "84826377": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": true
+        },
+        "91487354": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "97202116": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": true
+        },
+        "33622768": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "33976968": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": false
+        },
+        "34407478": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 6,
+            "has_override": false
+        },
+        "45477478": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "54135718": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "55000567": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "55976061": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 7,
+            "has_override": false
+        },
+        "56144204": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "56185216": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "62705514": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": true
+        },
+        "67007874": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "71627476": {
+            "brightness": 110,
+            "zoom": 100,
+            "image_index": 7,
+            "has_override": true
+        },
+        "88466265": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "89845477": {
+            "brightness": 110,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": true
+        },
+        "98154980": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 6,
+            "has_override": false
+        },
+        "87670343": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "02857206": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 6,
+            "has_override": true
+        },
+        "06112163": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": true
+        },
+        "10389549": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": true
+        },
+        "35540988": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "41910054": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "47193288": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "53733461": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": false
+        },
+        "59785124": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "63901207": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "66943161": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "70011471": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "75723839": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "80421042": {
+            "brightness": 110,
+            "zoom": 100,
+            "image_index": 4,
+            "has_override": true
+        },
+        "83160476": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "84832448": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "88743160": {
+            "brightness": 100,
+            "zoom": 100,
+            "image_index": 4,
+            "has_override": true
+        },
+        "92196629": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "92996530": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "35357440": {
+            "brightness": 150,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": true
+        },
+        "38370515": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 0,
+            "has_override": false
+        },
+        "46926061": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "53373962": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "55952653": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "62420662": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "66093428": {
+            "brightness": 145,
+            "zoom": 100,
+            "image_index": 7,
+            "has_override": true
+        },
+        "68037446": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "73259489": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "81399458": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "82003136": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "87255935": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "88672523": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "96111252": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "97226236": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "96964243": {
+            "brightness": 139,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": true
+        },
+        "11934778": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "12500351": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 11,
+            "has_override": false
+        },
+        "13027537": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "30222922": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 0,
+            "has_override": false
+        },
+        "40560615": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "41205623": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "50870709": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "62116218": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "60695849": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 5,
+            "has_override": false
+        },
+        "57732264": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "64074337": {
+            "brightness": 116,
+            "zoom": 100,
+            "image_index": 11,
+            "has_override": true
+        },
+        "99372001": {
+            "brightness": 116,
+            "zoom": 100,
+            "image_index": 9,
+            "has_override": true
+        },
+        "74936275": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "38877567": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 7,
+            "has_override": false
+        },
+        "41862868": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "48564386": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "50206883": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "59081421": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "66243297": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 7,
+            "has_override": false
+        },
+        "67717283": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 7,
+            "has_override": false
+        },
+        "77585156": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "78875663": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "84931149": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 0,
+            "has_override": false
+        },
+        "92910027": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "95989254": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "99244285": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "02151575": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "05507108": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "15698929": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "17815333": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "18153058": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "25645193": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "27164297": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": false
+        },
+        "30446435": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "49107060": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "52416331": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "56973293": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "63973325": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "76551762": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 2,
+            "has_override": false
+        },
+        "80292075": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "81245608": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "91235170": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 4,
+            "has_override": false
+        },
+        "93177535": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 3,
+            "has_override": false
+        },
+        "96518396": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "98989903": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 1,
+            "has_override": false
+        },
+        "03240463": {
+            "brightness": 135,
+            "zoom": 100,
+            "image_index": 0,
+            "has_override": true
+        },
+        "05646884": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 0,
+            "has_override": true
+        },
+        "07038381": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 0,
+            "has_override": true
+        },
+        "08876708": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 0,
+            "has_override": true
+        },
+        "12259372": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 0,
+            "has_override": true
+        },
+        "12333531": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 0,
+            "has_override": true
+        },
+        "14892485": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 0,
+            "has_override": true
+        },
+        "15936820": {
+            "brightness": 125,
+            "zoom": 100,
+            "image_index": 0,
+            "has_override": true
+        }
+    },
+    "last_raw_data_path": "C:/Users/PC-1/Desktop/Test Data",
+    "split_position_percent": 50,
+    "crop_settings": {
+        "enabled": false,
+        "left": 0,
+        "top": 0,
+        "right": 100,
+        "bottom": 100
+    },
+    "marked_folders": [
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\O2\\01319943",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\O2\\03848185",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\O2\\15161955",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\O2\\96658540",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\O4\\00570846",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\O4\\01951444",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\O4\\17734973",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\O4\\21199229",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\O4\\72464786",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\O4\\97202116",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\O5\\32238994",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\O5\\27395775",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\O5\\24872587",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\O5\\01894712",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\O5\\01309163",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\O5\\35043959",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\O5\\34863032",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\New folder (2)\\24872587",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\New folder (2)\\35043959",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\New folder (2)\\47128429",
+        "C:\\Users\\PC-1\\Desktop\\Testing Data\\New folder (2)\\92854747",
+        "C:\\IR Attendance\\Z Morning 7 AM To 2 PM\\00570846",
+        "C:\\IR Attendance\\Z Morning 7 AM To 2 PM\\01101153",
+        "C:\\IR Attendance\\Z Morning 7 AM To 2 PM\\03240463",
+        "C:\\IR Attendance\\Z Morning 7 AM To 2 PM\\01969785",
+        "C:\\IR Attendance\\Z Morning 7 AM To 2 PM\\02857206",
+        "C:\\IR Attendance\\Z Morning 7 AM To 2 PM\\05646884"
+    ],
+    "mobile_phone_ip": "192.168.1.5",
+    "tap_method": "PC Screen (Phone Link)",
+    "screen_digit_coords": {
+        "0": {
+            "x": 259,
+            "y": 635
+        },
+        "1": {
+            "x": 54,
+            "y": 485
+        },
+        "2": {
+            "x": 114,
+            "y": 483
+        },
+        "3": {
+            "x": 189,
+            "y": 480
+        },
+        "4": {
+            "x": 39,
+            "y": 553
+        },
+        "5": {
+            "x": 136,
+            "y": 559
+        },
+        "6": {
+            "x": 188,
+            "y": 555
+        },
+        "7": {
+            "x": 44,
+            "y": 647
+        },
+        "8": {
+            "x": 122,
+            "y": 639
+        },
+        "9": {
+            "x": 192,
+            "y": 637
+        },
+        "TC": {
+            "x": 330,
+            "y": 453
+        }
+    },
+    "mobile_tap_user": "UJN",
+    "mobile_tnc_enabled": false,
+    "ai_tap_user": "UJN",
+    "ai_tnc_enabled": false,
+    "auto_center_eyeball": true,
+    "last_facial_data_path": "C:/Users/PC-1/Desktop/Test Data",
+    "not_working_folders": [
+        "C:\\IR Attendance\\45935 - 14.15 To 20.30\\19030117"
+    ]
+}
