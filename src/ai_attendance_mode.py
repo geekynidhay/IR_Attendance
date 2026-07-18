@@ -24,7 +24,7 @@ import adb_utils
 import pyautogui
 
 from PIL import Image, ImageTk, ImageEnhance
-from config import config
+from config import config, DATA_DIR
 from folder_navigator import FolderNavigator
 from image_controls import ImageDisplay
 from footer import Footer
@@ -43,7 +43,7 @@ class AIAttendanceMode:
         self.lm               = license_manager
 
         self.frame    = ttk.Frame(parent)
-        self.data_dir = Path("C:/IR Attendance")
+        self.data_dir = DATA_DIR
 
         # Image state
         self.current_images      = []
@@ -210,6 +210,9 @@ class AIAttendanceMode:
         # Block left/right from changing tree selection
         self.folder_tree.bind('<Left>',  lambda e: (self._prev_image(), 'break')[1])
         self.folder_tree.bind('<Right>', lambda e: (self._next_image(), 'break')[1])
+        # ── Align Mode Banner ────────────────────────────────────────────────────
+        self.align_banner = ttk.Label(main, text="Tap on the mobile screen to Center",
+                                      font=('Arial', 14, 'bold'), background='#00BCD4', foreground='black', padding=5)
 
         # CENTER: Brightness ─────────────────────────────────────────────────────
         bf = ttk.LabelFrame(main, text="Brightness", width=100)
@@ -393,6 +396,8 @@ class AIAttendanceMode:
         self.parent.bind('<Key-M>',          self._toggle_mark)
         self.parent.bind('<Key-n>',          self._toggle_not_working)
         self.parent.bind('<Key-N>',          self._toggle_not_working)
+        self.parent.bind('<Key-t>',          self._toggle_align_mode)
+        self.parent.bind('<Key-T>',          self._toggle_align_mode)
         # REMOVED Key-a binding to prevent double-trigger with global hotkey
         self.folder_tree.bind('<Key-m>',     self._toggle_mark)
         self.folder_tree.bind('<Key-M>',     self._toggle_mark)
@@ -400,16 +405,20 @@ class AIAttendanceMode:
         self.folder_tree.bind('<Key-B>',     self._prompt_brightness)
         self.folder_tree.bind('<Key-n>',     self._toggle_not_working)
         self.folder_tree.bind('<Key-N>',     self._toggle_not_working)
+        self.folder_tree.bind('<Key-t>',     self._toggle_align_mode)
+        self.folder_tree.bind('<Key-T>',     self._toggle_align_mode)
         if hasattr(self, 'image_canvas'):
             self.image_canvas.bind('<Key-m>', self._toggle_mark)
             self.image_canvas.bind('<Key-M>', self._toggle_mark)
+            self.image_canvas.bind('<Key-t>', self._toggle_align_mode)
+            self.image_canvas.bind('<Key-T>', self._toggle_align_mode)
             self.image_canvas.bind('<Key-b>', self._prompt_brightness)
             self.image_canvas.bind('<Key-B>', self._prompt_brightness)
             self.image_canvas.bind('<Key-n>', self._toggle_not_working)
             self.image_canvas.bind('<Key-N>', self._toggle_not_working)
 
     def _unbind_keys(self):
-        for seq in ('<Return>', '<Key-b>', '<Key-B>', '<Key-m>', '<Key-M>', '<Key-n>', '<Key-N>', '<Key-a>', '<Key-A>'):
+        for seq in ('<Return>', '<Key-b>', '<Key-B>', '<Key-m>', '<Key-M>', '<Key-n>', '<Key-N>', '<Key-a>', '<Key-A>', '<Key-t>', '<Key-T>'):
             try:
                 self.parent.unbind(seq)
             except Exception:
@@ -1029,6 +1038,16 @@ class AIAttendanceMode:
                             self._stop_auto_attendance()
         except queue.Empty:
             pass
+            
+        # Check align mode state
+        if hasattr(server, 'align_mode'):
+            if getattr(server, 'align_mode'):
+                if not self.align_banner.winfo_viewable():
+                    self.align_banner.place(relx=0.5, rely=0.02, anchor=tk.N)
+            else:
+                if self.align_banner.winfo_viewable():
+                    self.align_banner.place_forget()
+                    
         self.parent.after(100, self._poll_ai_ui_queue)
 
     def _start_countdown(self, seconds):
@@ -1066,7 +1085,16 @@ class AIAttendanceMode:
         self.parent.focus_set()
         # Add global hotkey for A
         try:
-            keyboard.add_hotkey('a', lambda: self.parent.after(1, self._toggle_auto_attendance))
+            import sys
+            if sys.platform == "win32":
+                try:
+                    keyboard.add_hotkey('a', lambda: self.parent.after(1, self._toggle_auto_attendance))
+                except Exception as e:
+                    print(f"Failed to bind global hotkey 'a': {e}")
+            else:
+                # On mac/linux, fallback to tkinter local bind for 'a'
+                self.parent.bind('<a>', lambda e: self._toggle_auto_attendance())
+                self.parent.bind('<A>', lambda e: self._toggle_auto_attendance())
         except:
             pass
 
@@ -1076,7 +1104,18 @@ class AIAttendanceMode:
         self.frame.pack_forget()
         # Remove global hotkey
         try:
-            keyboard.remove_hotkey('a')
+            import sys
+            if sys.platform == "win32":
+                try:
+                    keyboard.remove_hotkey('a')
+                except:
+                    pass
+            else:
+                try:
+                    self.parent.unbind('<a>')
+                    self.parent.unbind('<A>')
+                except:
+                    pass
         except:
             pass
 
@@ -1084,6 +1123,11 @@ class AIAttendanceMode:
         self._unbind_keys()
         self.apply_layout_theme(False)
         self.on_back_callback()
+
+    def _toggle_align_mode(self, event=None):
+        if hasattr(server, 'toggle_align_mode_local'):
+            server.toggle_align_mode_local()
+        return 'break'
 
     def _toggle_not_working(self, event=None):
         if not hasattr(self, 'navigator') or not self.navigator.current_subfolder:

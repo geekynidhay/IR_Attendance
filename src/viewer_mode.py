@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from pathlib import Path
 import pyperclip
-from config import config
+from config import config, DATA_DIR
 from folder_navigator import FolderNavigator
 from image_controls import ImageControls, ImageDisplay
 import time
@@ -128,7 +128,7 @@ class ViewerMode:
         self.frame = ttk.Frame(parent)
         
         # Default Data Directory
-        self.data_dir = Path("C:/IR Attendance")
+        self.data_dir = DATA_DIR
         if not self.data_dir.exists():
             try:
                 self.data_dir.mkdir(parents=True, exist_ok=True)
@@ -1585,7 +1585,8 @@ class ViewerMode:
         self.parent.focus_set()
         
         # Add global hotkeys for Auto Mode (work even when BAS window is focused)
-        if self.is_auto:
+        import sys
+        if self.is_auto and sys.platform == 'win32':
             # Global hotkeys for brightness (work only in auto mode)
             try:
                 keyboard.add_hotkey('b', lambda: self.parent.after(1, self.prompt_brightness))
@@ -1616,6 +1617,15 @@ class ViewerMode:
                 keyboard.add_hotkey('down', lambda: self.parent.after(1, self.navigate_down))
             except:
                 pass
+        elif self.is_auto:
+            # Fallback to local Tkinter binds on Mac/Linux
+            self.parent.bind('<b>', lambda e: self.prompt_brightness())
+            self.parent.bind('<B>', lambda e: self.prompt_brightness())
+            self.parent.bind('<a>', lambda e: self.toggle_auto_attendance())
+            self.parent.bind('<Right>', lambda e: self.navigate_right())
+            self.parent.bind('<Left>', lambda e: self.navigate_left())
+            self.parent.bind('<Up>', lambda e: self.navigate_up())
+            self.parent.bind('<Down>', lambda e: self.navigate_down())
         # Start midnight push worker for Google Drive
         try:
             _username = config.get("license_user") or (self.lm.username if hasattr(self.lm, 'username') and self.lm.username else "default")
@@ -1637,7 +1647,8 @@ class ViewerMode:
         self.frame.pack_forget()
         
         # Remove global hotkeys for Auto Mode
-        if self.is_auto:
+        import sys
+        if self.is_auto and sys.platform == 'win32':
             try:
                 keyboard.remove_hotkey('b')
             except:
@@ -1664,6 +1675,17 @@ class ViewerMode:
                 pass
             try:
                 keyboard.remove_hotkey('down')
+            except:
+                pass
+        elif self.is_auto:
+            try:
+                self.parent.unbind('<b>')
+                self.parent.unbind('<B>')
+                self.parent.unbind('<a>')
+                self.parent.unbind('<Right>')
+                self.parent.unbind('<Left>')
+                self.parent.unbind('<Up>')
+                self.parent.unbind('<Down>')
             except:
                 pass
                 

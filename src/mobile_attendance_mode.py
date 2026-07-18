@@ -23,7 +23,7 @@ import server
 import adb_utils
 
 from PIL import Image, ImageTk, ImageEnhance
-from config import config
+from config import config, DATA_DIR
 from folder_navigator import FolderNavigator
 from image_controls import ImageDisplay
 from footer import Footer
@@ -42,7 +42,7 @@ class MobileAttendanceMode:
         self.lm               = license_manager
 
         self.frame    = ttk.Frame(parent)
-        self.data_dir = Path("C:/IR Attendance")
+        self.data_dir = DATA_DIR
 
         # Image state
         self.current_images      = []

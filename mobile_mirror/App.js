@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { StyleSheet, View, Image, StatusBar, TouchableOpacity, Modal } from 'react-native';
 import { Provider as PaperProvider, TextInput, Button, Text, MD3DarkTheme } from 'react-native-paper';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { ReactNativeZoomableView } from '@dudigital/react-native-zoomable-view';
+import { PanResponder, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const theme = {
@@ -12,7 +12,7 @@ const theme = {
 };
 
 // ─── Header ──────────────────────────────────────────────────────────────────
-function IPHeader({ ip, setIp, connected, onToggle, focusMode, setFocusMode, onDebug }) {
+function IPHeader({ ip, setIp, connected, onToggle, onDebug }) {
   return (
     <View style={s.header}>
       <TextInput label="PC IP" value={ip} onChangeText={setIp}
@@ -20,12 +20,6 @@ function IPHeader({ ip, setIp, connected, onToggle, focusMode, setFocusMode, onD
         keyboardType="numeric" textColor="#fff"
         outlineColor="#333" activeOutlineColor="#00BCD4"
         autoCorrect={false} blurOnSubmit={false} />
-      <Button mode="contained" onPress={() => setFocusMode(!focusMode)}
-        buttonColor={focusMode ? '#4CAF50' : '#444'}
-        style={[s.connectBtn, { marginRight: 6 }]}
-        labelStyle={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}>
-        {focusMode ? '🎯 ON' : '🎯 OFF'}
-      </Button>
       <Button mode="contained" onPress={onDebug} buttonColor="#FF9800"
         style={[s.connectBtn, { marginRight: 6 }]}
         labelStyle={{ color: '#000', fontSize: 10, fontWeight: 'bold' }}>
@@ -45,10 +39,17 @@ function MirrorScreen({ ip, setIp }) {
   const [connected,   setConnected]  = useState(false);
   const [imgUrl,      setImgUrl]     = useState(null);
   const [error,       setError]      = useState(null);
-  const [focusMode,   setFocusMode]  = useState(false);
+  const [alignMode,   setAlignMode]  = useState(false);
+  const alignModeRef = useRef(false);
+  const [alignToast,  setAlignToast] = useState(false);
   const [translate,   setTranslate]  = useState({ x: 0, y: 0 });
   const [showDebug,   setShowDebug]  = useState(false);
   const [debugImgUrl, setDebugImgUrl] = useState(null);
+
+  // Custom Pan/Zoom state
+  const pan = useRef(new Animated.ValueXY({x:0, y:0})).current;
+  const scale = useRef(new Animated.Value(1)).current;
+  const gestureStateRef = useRef({ initialDistance: null, initialScale: 1, currentScale: 1, currentPan: {x:0, y:0} });
 
   const interval        = useRef(null);
   const lastId          = useRef(-1);
@@ -140,34 +141,95 @@ function MirrorScreen({ ip, setIp }) {
     }
   }, [imgUrl, targetPoint, alignToTarget]);
 
-  // ─── Focus tap handler ───────────────────────────────────────────────────────
-  const handleFocusTap = useCallback((event) => {
-    const { locationX, locationY } = event.nativeEvent;
-    setTargetPoint({ x: locationX, y: locationY });
-    setFocusMode(false);
-  }, []);
-
-  // ─── Polling ────────────────────────────────────────────────────────────────
-  const stop = () => { clearInterval(interval.current); interval.current = null; };
-  const start = useCallback(() => {
-    stop();
-    interval.current = setInterval(async () => {
-      const clean = ip.replace(/^https?:\/\//, '').split(':')[0];
-      try {
-        const c = new AbortController();
-        const t = setTimeout(() => c.abort(), 2000);
-        const r = await fetch(`http://${clean}:5005/status`, { signal: c.signal });
-        clearTimeout(t);
-        if (r.ok) {
-          const d = await r.json();
-          if (d.image_id !== lastId.current) {
-            lastId.current = d.image_id;
-            setImgUrl(`http://${clean}:5005/image?t=${Date.now()}`);
-            setError(null);
+  // PanResponder for smooth dragging and pinching
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        pan.setOffset({ x: gestureStateRef.current.currentPan.x, y: gestureStateRef.current.currentPan.y });
+        pan.setValue({ x: 0, y: 0 });
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        const touches = evt.nativeEvent.touches;
+        if (touches.length === 2) {
+          // Pinch to zoom
+          const dx = touches[0].pageX - touches[1].pageX;
+          const dy = touches[0].pageY - touches[1].pageY;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (!gestureStateRef.current.initialDistance) {
+            gestureStateRef.current.initialDistance = distance;
+            gestureStateRef.current.initialScale = gestureStateRef.current.currentScale;
+          } else {
+            let newScale = (distance / gestureStateRef.current.initialDistance) * gestureStateRef.current.initialScale;
+            newScale = Math.max(1, Math.min(newScale, 5)); // min 1x, max 5x
+            scale.setValue(newScale);
+            gestureStateRef.current.currentScale = newScale;
+          }
+        } else {
+          // Reset initialDistance so next 2-finger touch starts fresh
+          gestureStateRef.current.initialDistance = null;
+          if (touches.length === 1) {
+            // Single finger pan
+            pan.setValue({ x: gestureState.dx, y: gestureState.dy });
           }
         }
-      } catch (e) { if (e.name !== 'AbortError') setError('Network error'); }
-    }, 500);
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        gestureStateRef.current.initialDistance = null;
+        pan.flattenOffset();
+        gestureStateRef.current.currentPan = { x: pan.x._value, y: pan.y._value };
+      },
+      onPanResponderTerminate: () => {
+        gestureStateRef.current.initialDistance = null;
+      }
+    })
+  ).current;
+
+  // ─── Align tap handler ───────────────────────────────────────────────────────
+  const handleAlignTap = useCallback(async (event) => {
+    if (!alignModeRef.current) return;
+    const { locationX, locationY } = event.nativeEvent;
+    setTargetPoint({ x: locationX, y: locationY });
+
+    // Tell the PC server to deactivate align mode
+    try {
+      const clean = ip.replace(/^https?:\/\//, '').split(':')[0];
+      await fetch(`http://${clean}:5005/toggle_align_mode`, { method: 'POST' });
+    } catch (e) {
+      console.log('Error deactivating align mode:', e);
+    }
+  }, [ip]);
+
+  // ─── WebSockets ─────────────────────────────────────────────────────────────
+  const ws = useRef(null);
+  const stop = () => { if (ws.current) { ws.current.close(); ws.current = null; } };
+  const start = useCallback(() => {
+    stop();
+    const clean = ip.replace(/^https?:\/\//, '').split(':')[0];
+    const wsUrl = `ws://${clean}:5005/ws`;
+    ws.current = new WebSocket(wsUrl);
+    ws.current.onopen = () => setError(null);
+    ws.current.onmessage = (e) => {
+      try {
+        const d = JSON.parse(e.data);
+        if (d.type === 'status') {
+           if (d.align_mode && !alignModeRef.current) {
+              setAlignToast(true);
+              setTimeout(() => setAlignToast(false), 2000);
+           }
+           alignModeRef.current = d.align_mode;
+           setAlignMode(d.align_mode);
+        } else if (d.type === 'image') {
+           setImgUrl(`data:image/png;base64,${d.data}`);
+           setError(null);
+        }
+      } catch(err) {}
+    };
+    ws.current.onerror = (e) => setError('WebSocket error');
+    ws.current.onclose = () => {
+       // Handle disconnects
+    };
   }, [ip]);
 
   const toggle = useCallback(() => {
@@ -190,7 +252,7 @@ function MirrorScreen({ ip, setIp }) {
     <View style={s.screen}>
       <View style={{ zIndex: 10, elevation: 10 }}>
         <IPHeader ip={ip} setIp={handleIpChange} connected={connected} onToggle={toggle}
-          focusMode={focusMode} setFocusMode={setFocusMode} onDebug={openDebug} />
+           onDebug={openDebug} />
       </View>
       {error && <View style={s.errBanner}><Text style={s.errText}>{error}</Text></View>}
 
@@ -218,18 +280,20 @@ function MirrorScreen({ ip, setIp }) {
       }}>
         {imgUrl ? (
           <>
-            {/* Translated image layer */}
-            <View style={[s.fill, {
-              overflow: 'hidden',
-              transform: [{ translateX: translate.x }, { translateY: translate.y }]
-            }]}>
-              <ReactNativeZoomableView maxZoom={100} minZoom={0.01} initialZoom={1}
-                bindToBorders={false} style={s.fill}>
-                <View style={s.fill}>
-                  <Image source={{ uri: imgUrl }} style={s.fill} resizeMode="contain"
-                    onError={e => setError(`Img: ${e.nativeEvent.error}`)} />
-                </View>
-              </ReactNativeZoomableView>
+            {/* Translated and Gestured image layer */}
+            <View style={[s.fill, { overflow: 'hidden' }]} {...panResponder.panHandlers}>
+              <Animated.View style={[s.fill, {
+                transform: [
+                  { translateX: translate.x },
+                  { translateY: translate.y },
+                  { translateX: pan.x },
+                  { translateY: pan.y },
+                  { scale: scale }
+                ]
+              }]}>
+                <Image source={{ uri: imgUrl }} style={s.fill} resizeMode="contain"
+                  onError={e => setError(`Img: ${e.nativeEvent.error}`)} />
+              </Animated.View>
             </View>
 
             {/* Green marker at the tapped location */}
@@ -264,15 +328,18 @@ function MirrorScreen({ ip, setIp }) {
               </Text>
             </View>
 
-            {/* Focus overlay — conditionally rendered = ZERO interference when off */}
-            {focusMode && (
-              <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1}
-                onPress={handleFocusTap}>
-                <View style={s.focusBanner} pointerEvents="none">
-                  <Text style={s.focusText}>🎯 Tap exactly on the pupil center</Text>
-                  <Text style={s.focusSubText}>All future images auto-align to this spot</Text>
-                </View>
+            {/* Touch interceptor ONLY active in align mode */}
+            {alignMode && (
+              <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleAlignTap}>
+                 <View style={StyleSheet.absoluteFill} pointerEvents="none" />
               </TouchableOpacity>
+            )}
+            
+            {/* Toast popup */}
+            {alignToast && (
+                <View style={s.focusBanner} pointerEvents="none">
+                  <Text style={s.focusText}>🎯 Tap screen to point out center</Text>
+                </View>
             )}
           </>
         ) : (

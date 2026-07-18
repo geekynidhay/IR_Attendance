@@ -3,6 +3,9 @@ import io
 import time
 import socket
 from flask import Flask, send_file, jsonify, request
+from flask_sock import Sock
+import json
+import base64
 from PIL import Image
 
 # Global state to share between UI and Server
@@ -11,6 +14,48 @@ current_pil_image = None
 current_image_id = 0
 server_thread = None
 app = Flask(__name__)
+sock = Sock(app)
+align_mode = False
+ws_clients = set()
+
+def _notify_ws_status():
+    payload = json.dumps({'type': 'status', 'align_mode': align_mode, 'image_id': current_image_id})
+    for ws in list(ws_clients):
+        try:
+            ws.send(payload)
+        except:
+            ws_clients.discard(ws)
+
+@sock.route('/ws')
+def ws_stream(ws):
+    ws_clients.add(ws)
+    try:
+        payload = {'type': 'status', 'align_mode': align_mode, 'image_id': current_image_id}
+        ws.send(json.dumps(payload))
+        if current_image_bytes:
+            b64 = base64.b64encode(current_image_bytes).decode('utf-8')
+            ws.send(json.dumps({'type': 'image', 'data': b64}))
+        while True:
+            data = ws.receive()
+    except Exception:
+        pass
+    finally:
+        ws_clients.discard(ws)
+
+@app.route('/toggle_align_mode', methods=['POST'])
+def toggle_align_mode():
+    global align_mode
+    align_mode = not align_mode
+    _notify_ws_status()
+    return jsonify({'align_mode': align_mode})
+
+def toggle_align_mode_local():
+    global align_mode
+    align_mode = not align_mode
+    _notify_ws_status()
+    return align_mode
+
+
 
 # ── Mobile Attendance state ───────────────────────────────────────────────────
 import threading as _threading
@@ -93,6 +138,7 @@ def get_status():
     last_phone_access_time = time.time()
     return jsonify({
         'image_id': current_image_id,
+        'align_mode': align_mode,
         'timestamp': time.time()
     })
 
@@ -123,134 +169,84 @@ def get_image():
 
 def _find_pupil_center(gray):
     """
-    Robust pupil detection using Hough Circles (primary) + contour fallback.
-    Returns (x, y, confidence, method_name).
+    Finds the pupil by looking for a large, dark, blob-like shape near the center.
+    This handles non-perfect circles (e.g. slightly closed eyes).
     """
     import cv2
     import numpy as np
 
     height, width = gray.shape
 
-    # ── Stage 1: Preprocessing ─────────────────────────────────────────────
-    # Bilateral filter preserves the pupil boundary while smoothing eyelash noise
-    filtered = cv2.bilateralFilter(gray, 9, 75, 75)
-    blurred = cv2.GaussianBlur(filtered, (9, 9), 2)
+    # Smooth to remove noise and eyelashes
+    heavy = cv2.medianBlur(gray, 7)
+    heavy = cv2.GaussianBlur(heavy, (11, 11), 0)
 
-    best_x, best_y = width // 2, height // 2   # ultimate fallback: image center
+    # Adaptive thresholding to find the darkest regions
+    min_val = int(np.min(heavy))
+    p15 = int(np.percentile(heavy, 15))
+    tv = max(int(min_val + (p15 - min_val) * 0.5), 10)
+    _, thresh = cv2.threshold(heavy, tv, 255, cv2.THRESH_BINARY_INV)
+
+    # Morphological operations to merge parts of the pupil and remove small specs
+    kern = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kern)
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kern)
+
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
     best_score = -1
+    best_x, best_y = width // 2, height // 2
     method = "center_fallback"
 
-    # ── Stage 2: Hough Circle Detection (primary) ──────────────────────────
-    # The pupil is a circle — Hough is the right tool for this.
-    min_radius = max(int(min(width, height) * 0.04), 8)
-    max_radius = int(min(width, height) * 0.25)
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area < 500 or area > (width * height * 0.4):
+            continue  # ignore very small specs or giant background blobs
 
-    circles = cv2.HoughCircles(
-        blurred,
-        cv2.HOUGH_GRADIENT,
-        dp=1.5,
-        minDist=max(width, height) // 4,
-        param1=50,
-        param2=25,
-        minRadius=min_radius,
-        maxRadius=max_radius
-    )
+        M = cv2.moments(cnt)
+        if M["m00"] == 0:
+            continue
+        cx = int(M["m10"] / M["m00"])
+        cy = int(M["m01"] / M["m00"])
 
-    if circles is not None:
-        circles = np.uint16(np.around(circles))
-        for c in circles[0, :]:
-            cx, cy, r = int(c[0]), int(c[1]), int(c[2])
+        # Spatial weight: strongly prefer the center of the image
+        dist = np.sqrt(((cx - width / 2) / (width / 2)) ** 2 +
+                       ((cy - height / 2) / (height / 2)) ** 2)
+        
+        # If it's too far from the center, ignore it
+        if dist > 0.8:
+            continue
 
-            # Reject circles whose CENTER is in the outer 12% margin
-            mx = int(width * 0.12)
-            my = int(height * 0.12)
-            if cx < mx or cx > width - mx or cy < my or cy > height - my:
-                continue
+        spatial_w = max(0, 1.0 - dist) # 1.0 at center, 0.0 at edges
 
-            # Measure mean darkness inside the circle
-            mask = np.zeros(gray.shape, dtype=np.uint8)
-            cv2.circle(mask, (cx, cy), r, 255, -1)
-            mean_val = cv2.mean(blurred, mask=mask)[0]
-            darkness = 255 - mean_val
+        # Darkness weight
+        mask = np.zeros(gray.shape, dtype=np.uint8)
+        cv2.drawContours(mask, [cnt], -1, 255, -1)
+        mean_val = cv2.mean(heavy, mask=mask)[0]
+        darkness = 255 - mean_val
 
-            # Mild spatial preference toward image center
-            dist = np.sqrt(((cx - width / 2) / width) ** 2 +
-                           ((cy - height / 2) / height) ** 2)
-            spatial_w = 1.0 - dist * 0.4
+        # Area weight: normalize area against a reasonable max size (e.g. 10% of image)
+        area_w = min(1.0, area / (width * height * 0.1))
 
-            score = darkness * spatial_w
-            if score > best_score:
-                best_score = score
-                best_x, best_y = cx, cy
-                method = "hough"
+        # Circularity: relax it heavily for closed eyes
+        perim = cv2.arcLength(cnt, True)
+        if perim == 0:
+            continue
+        circ = 4 * np.pi * area / (perim ** 2)
+        if circ < 0.3: # very loose
+            continue
 
-    # ── Stage 3: Contour-based fallback ────────────────────────────────────
-    # Only used if Hough didn't find a convincing dark circle
-    if best_score < 60:
-        heavy = cv2.medianBlur(gray, 7)
-        heavy = cv2.GaussianBlur(heavy, (11, 11), 0)
+        # Score calculation: Needs to be big, dark, and central.
+        score = spatial_w * 2.0 + area_w * 1.5 + (darkness / 255.0) * 1.0 + circ * 0.5
 
-        min_val = int(np.min(heavy))
-        p10 = int(np.percentile(heavy, 10))
-        tv = max(int(min_val + (p10 - min_val) * 0.4), 5)
-        _, thresh = cv2.threshold(heavy, tv, 255, cv2.THRESH_BINARY_INV)
+        if score > best_score:
+            best_score = score
+            best_x, best_y = cx, cy
+            method = "blob_center"
 
-        # Larger kernel to merge eyelash fragments, then open to remove specs
-        kern = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
-        thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kern)
-        thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kern)
+    # Confidence calculation based on score
+    confidence = min(max(best_score, 0) / 5.0, 1.0) if best_score > 0 else 0.0
 
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL,
-                                       cv2.CHAIN_APPROX_SIMPLE)
-        c_best = -1
-        for cnt in contours:
-            area = cv2.contourArea(cnt)
-            if area < 500 or area > (width * height * 0.3):
-                continue                                   # too small / too large
-
-            perim = cv2.arcLength(cnt, True)
-            if perim == 0:
-                continue
-            circ = 4 * np.pi * area / (perim ** 2)
-            if circ < 0.45:
-                continue                                   # eyelashes are elongated
-
-            M = cv2.moments(cnt)
-            if M["m00"] == 0:
-                continue
-            cx = int(M["m10"] / M["m00"])
-            cy = int(M["m01"] / M["m00"])
-
-            # Reject if center is near image edge
-            mx = int(width * 0.12)
-            my = int(height * 0.12)
-            if cx < mx or cx > width - mx or cy < my or cy > height - my:
-                continue
-
-            mask = np.zeros(gray.shape, dtype=np.uint8)
-            cv2.drawContours(mask, [cnt], -1, 255, -1)
-            darkness = 255 - cv2.mean(heavy, mask=mask)[0]
-
-            dist = np.sqrt(((cx - width / 2) / width) ** 2 +
-                           ((cy - height / 2) / height) ** 2)
-            spatial_w = 1.0 - dist * 0.3
-
-            score = (circ ** 2) * darkness * spatial_w
-            if score > c_best:
-                c_best = score
-                best_x, best_y = cx, cy
-                best_score = c_best
-                method = "contour"
-
-    # ── Stage 4: Final sanity check ────────────────────────────────────────
-    mx = int(width * 0.12)
-    my = int(height * 0.12)
-    if best_x < mx or best_x > width - mx or best_y < my or best_y > height - my:
-        best_x, best_y = width // 2, height // 2
-        best_score = 0
-        method = "center_fallback"
-
-    confidence = min(max(best_score, 0) / 200.0, 1.0)
     return best_x, best_y, confidence, method
 
 
@@ -273,6 +269,10 @@ def get_darkest_point():
 
         height, width = gray.shape
         px, py, confidence, method = _find_pupil_center(gray)
+        global align_mode
+        if align_mode:
+            align_mode = False
+            _notify_ws_status()
 
         return jsonify({
             'ok': True,
@@ -413,6 +413,13 @@ def update_image(pil_image):
             pil_image.save(img_byte_arr, format='PNG')
             current_image_bytes = img_byte_arr.getvalue()
             current_image_id += 1
+            b64 = base64.b64encode(current_image_bytes).decode('utf-8')
+            payload = json.dumps({'type': 'image', 'data': b64})
+            for ws in list(ws_clients):
+                try:
+                    ws.send(payload)
+                except:
+                    ws_clients.discard(ws)
         else:
             current_image_bytes = None
             current_image_id += 1 # Increment so phone fetches the placeholder
