@@ -91,6 +91,7 @@ def generate_accordion_page(title, subtitle, data, back_link="index.html"):
     <a href="android_versions.html">Android App</a>
     <a href="rd_services.html">RD Services</a>
     <a href="batches.html">Batches</a>
+    <a href="other_software.html">Other Software</a>
   </div>
   <div class="container">
     <header>
@@ -182,6 +183,7 @@ def generate_index_html(latest_win, latest_and):
     <a href="android_versions.html">Android App</a>
     <a href="rd_services.html">RD Services</a>
     <a href="batches.html">Batches</a>
+    <a href="other_software.html">Other Software</a>
   </div>
 
   <div class="container" style="margin-top: 40px;">
@@ -233,6 +235,15 @@ def generate_index_html(latest_win, latest_and):
           <a href="batches.html" class="btn" rel="noopener">Browse Batches</a>
         </div>
       </div>
+
+      <!-- Other Software -->
+      <div class="card">
+        <h3>Other Software</h3>
+        <p>Additional utilities and companion tools like the IRIS PDF Generator.</p>
+        <div class="card-actions">
+          <a href="other_software.html" class="btn" rel="noopener">Browse Software</a>
+        </div>
+      </div>
     </div>
 
     <footer>
@@ -271,57 +282,73 @@ def run_sync(log_cb=print):
     svc = drive_manager._service
     os.makedirs(DOCS_DIR, exist_ok=True)
     
-    # 2. Fetch Data
+    # 2. Fetch Data — track which fetches SUCCEEDED so we only overwrite on success
+    fetch_errors = []
+
     log_cb("\nFetching Batches...")
+    batches_data = None
     try:
         batches_data = fetch_folder_data(svc, FOLDERS["Batches"])
     except Exception as e:
         log_cb(f"Failed to fetch Batches: {e}")
-        batches_data = {}
+        fetch_errors.append("Batches")
         
     log_cb("Fetching Windows App versions...")
+    win_data = None
     try:
         win_data = fetch_folder_data(svc, FOLDERS["WindowsApp"])
     except Exception as e:
         log_cb(f"Failed to fetch Windows App: {e}")
-        win_data = {}
+        fetch_errors.append("WindowsApp")
         
     log_cb("Fetching Android App versions...")
+    and_data = None
     try:
         and_data = fetch_folder_data(svc, FOLDERS["AndroidApp"])
     except Exception as e:
         log_cb(f"Failed to fetch Android App: {e}")
-        and_data = {}
+        fetch_errors.append("AndroidApp")
         
     log_cb("Fetching RD Services...")
+    rd_data = None
     try:
         rd_data = fetch_folder_data(svc, FOLDERS["RDServices"])
     except Exception as e:
         log_cb(f"Failed to fetch RD Services: {e}")
-        rd_data = {}
+        fetch_errors.append("RDServices")
 
-    # 3. Generate Accordion Pages
+    if fetch_errors:
+        log_cb(f"\n⚠ WARNING: {len(fetch_errors)} folder(s) failed to fetch: {', '.join(fetch_errors)}")
+        log_cb("Skipping overwrite of pages that could not be fetched to preserve existing content.")
+
+    # 3. Generate Accordion Pages — only write if fetch succeeded (data is not None)
     log_cb("\nGenerating pages...")
     pages = {
-        "batches.html": generate_accordion_page("Batches", "Download complete image archives to import directly into your local database.", batches_data),
-        "windows_versions.html": generate_accordion_page("Windows App Versions", "Browse and download previous versions of the IR Attendance Windows Desktop application.", win_data),
-        "android_versions.html": generate_accordion_page("Android App Versions", "Browse and download previous versions of the IR Attendance Android Mobile application.", and_data),
-        "rd_services.html": generate_accordion_page("RD Services & Drivers", "Browse and download biometric drivers (Mantra, Morpho, etc.).", rd_data)
+        "batches.html": (batches_data, generate_accordion_page("Batches", "Download complete image archives to import directly into your local database.", batches_data or {})),
+        "windows_versions.html": (win_data, generate_accordion_page("Windows App Versions", "Browse and download previous versions of the IR Attendance Windows Desktop application.", win_data or {})),
+        "android_versions.html": (and_data, generate_accordion_page("Android App Versions", "Browse and download previous versions of the IR Attendance Android Mobile application.", and_data or {})),
+        "rd_services.html": (rd_data, generate_accordion_page("RD Services & Drivers", "Browse and download biometric drivers (Mantra, Morpho, etc.).", rd_data or {}))
     }
     
-    for filename, html in pages.items():
+    for filename, (data, html) in pages.items():
+        if data is None:
+            log_cb(f" - SKIPPED {filename} (fetch failed — preserving existing content)")
+            continue
         with open(DOCS_DIR / filename, "w", encoding="utf-8") as f:
             f.write(html)
         log_cb(f" - Generated {filename}")
 
-    # 4. Generate Index HTML with latest links
-    latest_win_id = get_latest_file_id(win_data)
-    latest_and_id = get_latest_file_id(and_data)
-    
-    index_html = generate_index_html(latest_win_id, latest_and_id)
-    with open(DOCS_DIR / "index.html", "w", encoding="utf-8") as f:
-        f.write(index_html)
-    log_cb(" - Generated index.html")
+    # 4. Generate Index HTML with latest links (only if at least win/android data was fetched)
+    if win_data is not None or and_data is not None:
+        latest_win_id = get_latest_file_id(win_data or {})
+        latest_and_id = get_latest_file_id(and_data or {})
+        
+        index_html = generate_index_html(latest_win_id, latest_and_id)
+        with open(DOCS_DIR / "index.html", "w", encoding="utf-8") as f:
+            f.write(index_html)
+        log_cb(" - Generated index.html")
+    else:
+        log_cb(" - SKIPPED index.html (all fetches failed — preserving existing content)")
 
     # 5. Git commit & push
     log_cb("\nPushing changes to GitHub...")
