@@ -201,21 +201,22 @@ class WelcomeScreen:
         self.username = username
         self.on_complete = on_complete
         
-        # Main container
-        self.frame = tk.Frame(root) 
+        # Use a nice dark background
+        self.frame = tk.Frame(root, bg='#121212') 
         self.frame.pack(fill=tk.BOTH, expand=True)
         
         # Centering container
-        container = tk.Frame(self.frame)
+        container = tk.Frame(self.frame, bg='#121212')
         container.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         
         # Greeting label parts
-        hi_label = tk.Label(container, text="Hi, ", font=('Segoe UI', 32))
+        hi_label = tk.Label(container, text="Hi, ", font=('Segoe UI', 32), 
+                           fg='#E0E0E0', bg='#121212')
         hi_label.pack(side=tk.LEFT)
         
-        # User Name in bold
+        # User Name in bold with a vibrant accent color
         name_label = tk.Label(container, text=username, font=('Segoe UI', 32, 'bold'), 
-                             fg='#0078D7')
+                             fg='#00D4FF', bg='#121212')
         name_label.pack(side=tk.LEFT)
         
         # Start timer for 3 seconds
@@ -235,27 +236,6 @@ class WelcomeScreen:
             # Instantly restore full opacity before building the main application UI
             self.root.attributes("-alpha", 1.0)
             self.on_complete()
-
-class ModernButton(tk.Label):
-    """A beautiful, platform-independent flat button with hover effects based on tk.Label."""
-    def __init__(self, master, text, command, bg='#1976D2', fg='white', hover_bg='#1565C0', font=('Segoe UI', 11, 'bold'), width=25, height=2, **kwargs):
-        super().__init__(master, text=text, bg=bg, fg=fg, font=font, width=width, height=height, cursor='hand2', relief=tk.FLAT, bd=0, **kwargs)
-        self.command = command
-        self.bg = bg
-        self.hover_bg = hover_bg
-        
-        self.bind("<Enter>", self.on_enter)
-        self.bind("<Leave>", self.on_leave)
-        self.bind("<Button-1>", self.on_click)
-        
-    def on_enter(self, e):
-        self.config(bg=self.hover_bg)
-        
-    def on_leave(self, e):
-        self.config(bg=self.bg)
-        
-    def on_click(self, e):
-        self.command()
 
 class IRAttendanceApp:
     """Main application class"""
@@ -291,8 +271,7 @@ class IRAttendanceApp:
 
         
         # Ensure default directory exists
-        from config import DATA_DIR
-        os.makedirs(DATA_DIR, exist_ok=True)
+        os.makedirs("C:/IR Attendance", exist_ok=True)
         
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         
@@ -302,26 +281,19 @@ class IRAttendanceApp:
     def start_background_service(self):
         """Launches IR_Attendance_Service.py in the background if it's not already running."""
         try:
-            import subprocess
+            import threading
             import sys
             
+            # Instead of spawning a subprocess (which causes infinite loops in PyInstaller),
+            # we run the listener in a background thread within the same process.
             script_path = Path(__file__).parent / "IR_Attendance_Service.py"
             if script_path.exists():
-                python_exe = sys.executable
-                if "python.exe" in python_exe:
-                    pythonw_exe = python_exe.replace("python.exe", "pythonw.exe")
-                else:
-                    pythonw_exe = python_exe
-                
-                # Start it windowless, redirecting std streams so it detaches completely
-                kwargs = {}
-                if sys.platform == "win32":
-                    kwargs["creationflags"] = 0x08000000
-                subprocess.Popen([pythonw_exe, str(script_path)], 
-                                 stdout=subprocess.DEVNULL, 
-                                 stderr=subprocess.DEVNULL,
-                                 **kwargs)
-                print("[Main] Started background service listener.")
+                try:
+                    import IR_Attendance_Service
+                    threading.Thread(target=IR_Attendance_Service.listen_for_commands, daemon=True).start()
+                    print("[Main] Started background service listener in thread.")
+                except ImportError as e:
+                    print(f"[Main] Failed to import background service: {e}")
         except Exception as e:
             print(f"[Main] Failed to start background service: {e}")
 
@@ -346,16 +318,18 @@ class IRAttendanceApp:
         available_themes = style.theme_names()
         if 'vista' in available_themes:
             style.theme_use('vista')
-
-        # Fix Treeview tag colors
-        style.configure("Treeview", 
-                        background="white",
-                        foreground="black",
-                        fieldbackground="white",
-                        font=('Segoe UI', 10))
+        elif 'clam' in available_themes:
+            style.theme_use('clam')
+        
+        # Configure custom styles
+        style.configure('Title.TLabel', font=('Arial', 24, 'bold'))
+        style.configure('Subtitle.TLabel', font=('Arial', 12))
+        style.configure('Accent.TButton', font=('Arial', 11, 'bold'))
+        
+        # Fix Treeview tag colors on Windows
         style.map("Treeview", 
-                  foreground=[('selected', '#ffffff')],
-                  background=[('selected', '#0078D7')])
+                  foreground=[('selected', 'white')],
+                  background=[('selected', '#1976D2')])
     
     def create_menu(self):
         """Create the main menu screen"""
@@ -376,21 +350,21 @@ class IRAttendanceApp:
         # Mobile Status Bar
         self.mobile_status_frame = ttk.Frame(center_frame, padding=(10, 5))
         self.mobile_status_frame.pack(fill=tk.X)
-        self.mobile_status_label = ttk.Label(self.mobile_status_frame, text="Phone Status: Checking...", font=('Segoe UI', 10, 'bold'))
+        self.mobile_status_label = ttk.Label(self.mobile_status_frame, text="Phone Status: Checking...", font=('Arial', 10, 'bold'))
         self.mobile_status_label.pack()
         
         # Eye Mirror Server Status
         ip_list = server.start_server()
         ip_str = ip_list[0] if ip_list else "Unknown"
-        self.eye_mirror_label = ttk.Label(self.mobile_status_frame, text=f"Eye Mirror IP: {ip_str} (Waiting...)", font=('Segoe UI', 14, 'bold'), foreground='orange')
+        self.eye_mirror_label = ttk.Label(self.mobile_status_frame, text=f"Eye Mirror IP: {ip_str} (Waiting...)", font=('Arial', 14, 'bold'), foreground='orange')
         self.eye_mirror_label.pack(pady=(5, 0))
         
         # Share Screen Prompt (Prominent Location)
         self.share_prompt_frame = ttk.Frame(center_frame, padding=10)
-        self.share_btn = ModernButton(self.share_prompt_frame, text="📲 CLICK HERE TO SHARE SCREEN", 
-                                      command=self.launch_native_mirror,
-                                      bg='#FF9800', hover_bg='#F57C00', fg='white',
-                                      width=35, height=2)
+        self.share_btn = tk.Button(self.share_prompt_frame, text="📲 CLICK HERE TO SHARE SCREEN", 
+                                  command=self.launch_native_mirror,
+                                  bg='#FF9800', fg='white', font=('Arial', 12, 'bold'),
+                                  padx=40, pady=10, relief=tk.RAISED)
         self.share_btn.pack()
         
         self.update_dashboard()
@@ -399,20 +373,12 @@ class IRAttendanceApp:
         # Google Drive Integration Button
         self.cloud_sync_frame = ttk.Frame(center_frame, padding=10)
         self.cloud_sync_frame.pack()
-        self.btn_cloud = ModernButton(self.cloud_sync_frame, text="☁ Connect Google Drive (JSON Key)", 
-                                      command=self.upload_drive_key,
-                                      bg='#2196F3', hover_bg='#1976D2', fg='white',
-                                      width=35, height=2)
+        self.btn_cloud = tk.Button(self.cloud_sync_frame, text="☁ Connect Google Drive (JSON Key)", 
+                                  command=self.upload_drive_key,
+                                  bg='#2196F3', fg='white', font=('Arial', 10, 'bold'),
+                                  padx=20, pady=5, relief=tk.RAISED)
         self.btn_cloud.pack()
-        
-        # Import Batch Button
-        self.import_batch_frame = ttk.Frame(center_frame, padding=5)
-        self.import_batch_frame.pack()
-        self.btn_import = ModernButton(self.import_batch_frame, text="📥 Import Batch (Archive)", 
-                                      command=self.import_batch,
-                                      bg='#8E24AA', hover_bg='#7B1FA2', fg='white',
-                                      width=35, height=2)
-        self.btn_import.pack()
+        self.update_drive_button_status()
         
         ttk.Label(center_frame, text="Select a mode to begin",
                  style='Subtitle.TLabel').pack(pady=10)
@@ -421,19 +387,22 @@ class IRAttendanceApp:
         button_frame = ttk.Frame(center_frame)
         button_frame.pack(pady=30)
         
-        manual_btn = ModernButton(button_frame, text="Manual Mode",
-                                  command=self.open_manual_menu,
-                                  bg='#4CAF50', hover_bg='#43A047', fg='white', width=25, height=2)
+        manual_btn = tk.Button(button_frame, text="Manual Mode",
+                               command=self.open_manual_menu,
+                               font=('Arial', 12, 'bold'),
+                               bg='#4CAF50', fg='white', width=25, pady=8)
         manual_btn.pack(pady=10)
- 
-        auto_btn = ModernButton(button_frame, text="Automatic Mode",
-                                command=self.open_auto_menu,
-                                bg='#1976D2', hover_bg='#1565C0', fg='white', width=25, height=2)
+
+        auto_btn = tk.Button(button_frame, text="Automatic Mode",
+                             command=self.open_auto_menu,
+                             font=('Arial', 12, 'bold'),
+                             bg='#1976D2', fg='white', width=25, pady=8)
         auto_btn.pack(pady=10)
         
-        admin_btn = ModernButton(button_frame, text="Admin Mode",
-                                 command=self.open_admin_modes,
-                                 bg='#37474F', hover_bg='#2C3E50', fg='white', width=25, height=2)
+        admin_btn = tk.Button(button_frame, text="Admin Mode",
+                             command=self.open_admin_modes,
+                             font=('Arial', 12, 'bold'),
+                             bg='#37474F', fg='white', width=25, pady=8)
         admin_btn.pack(pady=10)
         
         # Info
@@ -442,11 +411,11 @@ JPG Splitter: Split images vertically with custom crop areas
 JPG Extraction: Batch extract sub-images from JPGs
 PDF Extraction: Extract images from PDF reports with OCR
 Computer Attendance: Navigate and view images and mark attendance
- 
+
 Hotkey: Ctrl+Space to bring window to focus from any application
         """
         ttk.Label(center_frame, text=info_text, justify=tk.CENTER,
-                 font=('Segoe UI', 9), foreground='#888888').pack(pady=20)
+                 font=('Arial', 9)).pack(pady=20)
         
         # Footer
         self.footer = Footer(self.menu_frame)
@@ -463,7 +432,7 @@ Hotkey: Ctrl+Space to bring window to focus from any application
             from drive_manager import drive_manager
             
         filepath = filedialog.askopenfilename(
-            title="Select Service Account JSON Key",
+            title="Select Google Service Account or Client Secrets JSON",
             filetypes=[("JSON Files", "*.json"), ("All Files", "*.*")]
         )
         if not filepath:
@@ -472,51 +441,26 @@ Hotkey: Ctrl+Space to bring window to focus from any application
         success, msg = drive_manager.authenticate(filepath)
         if success:
             messagebox.showinfo("Success", "Google Drive connected successfully for automatic sync!")
+            self.update_drive_button_status()
         else:
             messagebox.showerror("Error", f"Failed to connect: {msg}")
-            
-    def import_batch(self):
-        """Import a batch archive from IR Admin Utility"""
-        from tkinter import filedialog, messagebox
-        import threading
-        import sys
-        
+
+    def update_drive_button_status(self):
         try:
-            from system_utils import SystemUtils
-        except ImportError:
-            sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-            from system_utils import SystemUtils
-            
-        filepath = filedialog.askopenfilename(
-            title="Select Batch Archive (Output from Admin Utility)",
-            filetypes=[
-                ("Archive files", "*.zip *.rar *.7z *.tar *.gz *.tgz *.bz2 *.xz"),
-                ("All files", "*.*")
-            ]
-        )
-        if not filepath:
-            return
-            
-        # Temporarily disable button
-        original_text = self.btn_import.cget("text")
-        self.btn_import.config(text="⏳ Extracting... Please wait", state=tk.DISABLED)
-        
-        def _extract():
-            try:
-                # Use standard target directory consistent with config
-                from config import DATA_DIR
-                dest_dir = str(DATA_DIR)
-                
-                SystemUtils.extract_archive(filepath, dest_dir)
-                
-                # Re-enable button in main thread
-                self.root.after(0, lambda: self.btn_import.config(text=original_text, state=tk.NORMAL))
-                self.root.after(0, lambda: messagebox.showinfo("Success", f"Batch successfully imported into your database!\nIt will now appear in your Mode dropdowns."))
-            except Exception as e:
-                self.root.after(0, lambda: self.btn_import.config(text=original_text, state=tk.NORMAL))
-                self.root.after(0, lambda: messagebox.showerror("Error", f"Failed to import batch:\n{e}"))
-                
-        threading.Thread(target=_extract, daemon=True).start()
+            from drive_manager import drive_manager
+            if drive_manager.is_authenticated():
+                self.btn_cloud.config(
+                    text=f"☁ Google Drive Connected ({drive_manager.connected_email})",
+                    bg='#2E7D32'
+                )
+            else:
+                self.btn_cloud.config(
+                    text="☁ Connect Google Drive (JSON Key)",
+                    bg='#2196F3'
+                )
+        except Exception as e:
+            print(f"Error updating drive button status: {e}")
+    
     def open_manual_menu(self):
         """Open Manual Mode selection screen"""
         self.menu_frame.pack_forget()
@@ -530,19 +474,19 @@ Hotkey: Ctrl+Space to bring window to focus from any application
         center = ttk.Frame(self.manual_frame)
         center.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         
-        ttk.Label(center, text="Manual Mode", font=('Segoe UI', 18, 'bold'), foreground='#00D4FF').pack(pady=20)
+        ttk.Label(center, text="Manual Mode", font=('Arial', 18, 'bold')).pack(pady=20)
         
-        ModernButton(center, text="💻 Computer Attendance", 
-                     command=lambda: [self.manual_frame.pack_forget(), self.open_viewer_mode(is_auto=False, return_screen='manual')],
-                     bg='#4CAF50', hover_bg='#43A047', fg='white', width=25, height=2).pack(pady=10)
+        tk.Button(center, text="💻 Computer Attendance", 
+                   command=lambda: [self.manual_frame.pack_forget(), self.open_viewer_mode(is_auto=False, return_screen='manual')],
+                   font=('Arial', 12, 'bold'), bg='#90EE90', width=25, pady=8).pack(pady=10)
                    
-        ModernButton(center, text="📱 Mobile Attendance", 
-                     command=lambda: [self.manual_frame.pack_forget(), self.open_mobile_attendance_mode(return_screen='manual')],
-                     bg='#00897B', hover_bg='#00695C', fg='white', width=25, height=2).pack(pady=10)
+        tk.Button(center, text="📱 Mobile Attendance", 
+                   command=lambda: [self.manual_frame.pack_forget(), self.open_mobile_attendance_mode(return_screen='manual')],
+                   font=('Arial', 12, 'bold'), bg='#00695C', fg='white', width=25, pady=8).pack(pady=10)
                    
-        ModernButton(center, text="← Back to Menu", 
-                     command=lambda: [self.manual_frame.pack_forget(), self.menu_frame.pack(fill=tk.BOTH, expand=True)],
-                     bg='#37474F', hover_bg='#2C3E50', fg='white', width=25, height=2).pack(pady=20)
+        tk.Button(center, text="← Back to Menu", 
+                   command=lambda: [self.manual_frame.pack_forget(), self.menu_frame.pack(fill=tk.BOTH, expand=True)],
+                   font=('Arial', 12, 'bold'), bg='#37474F', fg='white', width=25, pady=8).pack(pady=20)
 
     def open_auto_menu(self):
         """Open Automatic Mode selection screen"""
@@ -557,19 +501,19 @@ Hotkey: Ctrl+Space to bring window to focus from any application
         center = ttk.Frame(self.auto_frame)
         center.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         
-        ttk.Label(center, text="Automatic Mode", font=('Segoe UI', 18, 'bold'), foreground='#00D4FF').pack(pady=20)
+        ttk.Label(center, text="Automatic Mode", font=('Arial', 18, 'bold')).pack(pady=20)
         
-        ModernButton(center, text="💻 Computer Attendance", 
-                     command=lambda: [self.auto_frame.pack_forget(), self.open_viewer_mode(is_auto=True, return_screen='auto')],
-                     bg='#4CAF50', hover_bg='#43A047', fg='white', width=25, height=2).pack(pady=10)
+        tk.Button(center, text="💻 Computer Attendance", 
+                   command=lambda: [self.auto_frame.pack_forget(), self.open_viewer_mode(is_auto=True, return_screen='auto')],
+                   font=('Arial', 12, 'bold'), bg='#90EE90', width=25, pady=8).pack(pady=10)
                    
         # New Icon GIF on the RIGHT of the button inside a frame
         ai_row = ttk.Frame(center)
         ai_row.pack(fill=tk.X, pady=10)
         
-        btn = ModernButton(ai_row, text="📱 Mobile Attendance", 
-                           command=lambda: [self.auto_frame.pack_forget(), self.open_ai_attendance_mode(return_screen='auto')],
-                           bg='#1976D2', hover_bg='#1565C0', fg='white', width=25, height=2)
+        btn = tk.Button(ai_row, text="📱 Mobile Attendance", 
+                   command=lambda: [self.auto_frame.pack_forget(), self.open_ai_attendance_mode(return_screen='auto')],
+                   font=('Arial', 12, 'bold'), bg='#1565C0', fg='white', width=25, pady=8)
         btn.pack(anchor=tk.CENTER)
         
         gif_path = Path(__file__).parent / "new_icon.gif"
@@ -577,9 +521,9 @@ Hotkey: Ctrl+Space to bring window to focus from any application
             self.new_gif = GifLabel(ai_row, str(gif_path))
             self.new_gif.place(relx=0.5, rely=0.5, x=160, anchor=tk.CENTER)
                    
-        ModernButton(center, text="← Back to Menu", 
-                     command=lambda: [self.auto_frame.pack_forget(), self.menu_frame.pack(fill=tk.BOTH, expand=True)],
-                     bg='#37474F', hover_bg='#2C3E50', fg='white', width=25, height=2).pack(pady=20)
+        tk.Button(center, text="← Back to Menu", 
+                   command=lambda: [self.auto_frame.pack_forget(), self.menu_frame.pack(fill=tk.BOTH, expand=True)],
+                   font=('Arial', 12, 'bold'), bg='#37474F', fg='white', width=25, pady=8).pack(pady=20)
 
     def open_admin_modes(self):
         """Open Admin Modes selection screen"""
@@ -595,24 +539,25 @@ Hotkey: Ctrl+Space to bring window to focus from any application
         center = ttk.Frame(self.admin_frame)
         center.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         
-        ttk.Label(center, text="Admin Modes", font=('Segoe UI', 18, 'bold'), foreground='#00D4FF').pack(pady=20)
+        ttk.Label(center, text="Admin Modes", font=('Arial', 18, 'bold')).pack(pady=20)
         
-        ModernButton(center, text="JPG Splitter", 
-                     command=lambda: [self.admin_frame.pack_forget(), self.open_splitter_mode()],
-                     bg='#1976D2', hover_bg='#1565C0', fg='white', width=25, height=2).pack(pady=10)
+        btn_width = 25
+        ttk.Button(center, text="JPG Splitter", 
+                   command=lambda: [self.admin_frame.pack_forget(), self.open_splitter_mode()],
+                   width=btn_width).pack(pady=10)
                    
-        ModernButton(center, text="JPG Extraction", 
-                     command=lambda: [self.admin_frame.pack_forget(), self.open_extractor_mode()],
-                     bg='#1976D2', hover_bg='#1565C0', fg='white', width=25, height=2).pack(pady=10)
+        ttk.Button(center, text="JPG Extraction", 
+                   command=lambda: [self.admin_frame.pack_forget(), self.open_extractor_mode()],
+                   width=btn_width).pack(pady=10)
                    
-        ModernButton(center, text="PDF Extraction", 
-                     command=lambda: [self.admin_frame.pack_forget(), self.open_pdf_extractor_mode()],
-                     bg='#1976D2', hover_bg='#1565C0', fg='white', width=25, height=2).pack(pady=10)
- 
+        ttk.Button(center, text="PDF Extraction", 
+                   command=lambda: [self.admin_frame.pack_forget(), self.open_pdf_extractor_mode()],
+                   width=btn_width).pack(pady=10)
+
                    
-        ModernButton(center, text="← Back to Menu", 
-                     command=lambda: [self.admin_frame.pack_forget(), self.menu_frame.pack(fill=tk.BOTH, expand=True)],
-                     bg='#37474F', hover_bg='#2C3E50', fg='white', width=25, height=2).pack(pady=20)
+        ttk.Button(center, text="← Back to Menu", 
+                   command=lambda: [self.admin_frame.pack_forget(), self.menu_frame.pack(fill=tk.BOTH, expand=True)],
+                   style='Accent.TButton').pack(pady=20)
 
     def open_splitter_mode(self):
         """Open Image Splitter mode"""
@@ -807,7 +752,6 @@ def main():
         root = tk.Tk()
         root.title("IR Attendance")
         root.geometry("1200x800")
-        root.configure(bg='#121212')
         
         # Set window icon
         try:
@@ -836,7 +780,8 @@ def main():
                     # Check if running
                     output = subprocess.check_output('tasklist', creationflags=subprocess.CREATE_NO_WINDOW)
                     if b"bas.exe" not in output.lower():
-                        ctypes.windll.shell32.ShellExecuteW(None, "open", bas_path, None, None, 1)
+                        bas_dir = os.path.dirname(bas_path)
+                        ctypes.windll.shell32.ShellExecuteW(None, "open", bas_path, None, bas_dir, 1)
             except Exception as e:
                 print(f"Failed to auto-launch BAS: {e}")
                 

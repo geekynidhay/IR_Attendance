@@ -43,8 +43,7 @@ class AIAttendanceMode:
         self.lm               = license_manager
 
         self.frame    = ttk.Frame(parent)
-        from config import DATA_DIR
-        self.data_dir = DATA_DIR
+        self.data_dir = Path("C:/IR Attendance")
 
         # Image state
         self.current_images      = []
@@ -164,15 +163,16 @@ class AIAttendanceMode:
                        "b: Brightness  |  m: Mark",
                   font=('Arial', 9)).pack()
 
-        # ── Info row (Sr / Attendance ID / Marked) ──────────────────────────────
+        # ── Info row (Batch ID / Sr / Attendance ID / Marked) ───────────────────
         ir = ttk.Frame(c)
         ir.pack(fill=tk.X, padx=10)
-        for lbl_text, attr in [("Sr No", "sr_label"),
-                                ("Attendance ID", "att_id_label"),
-                                ("Marked", "marked_count_label")]:
+        for lbl_text, attr, fsize in [("Batch ID", "top_batch_id_label", 14),
+                                      ("Sr No", "sr_label", 12),
+                                      ("Attendance ID", "att_id_label", 28),
+                                      ("Marked", "marked_count_label", 12)]:
             frm = ttk.LabelFrame(ir, text=lbl_text)
-            frm.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=3)
-            lbl = ttk.Label(frm, text="---", font=('Arial', 12, 'bold'),
+            frm.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=3)
+            lbl = ttk.Label(frm, text="---", font=('Arial', fsize, 'bold'),
                             anchor=tk.CENTER)
             lbl.pack(fill=tk.BOTH, expand=True, pady=6)
             setattr(self, attr, lbl)
@@ -421,7 +421,7 @@ class AIAttendanceMode:
         if not self.data_dir.exists():
             self.batch_combo['values'] = []
             return
-        folders = sorted(f.name for f in self.data_dir.iterdir() if f.is_dir())
+        folders = sorted(f.name for f in self.data_dir.iterdir() if f.is_dir() and f.name != 'Reports')
         self.batch_combo['values'] = folders
         last = config.get('last_batch_path', '')
         if last:
@@ -441,7 +441,10 @@ class AIAttendanceMode:
             return
         try:
             parts = name.split(' - ')
-            self.lbl_batch_id.config(text=f"Batch ID: {parts[0].strip()}")
+            batch_id_str = parts[0].strip()
+            self.lbl_batch_id.config(text=f"Batch ID: {batch_id_str}")
+            if hasattr(self, 'top_batch_id_label'):
+                self.top_batch_id_label.config(text=batch_id_str)
             if len(parts) > 1:
                 tp = parts[1].lower().split(' to ')
                 if len(tp) == 2:
@@ -449,6 +452,8 @@ class AIAttendanceMode:
                     self.lbl_batch_out.config(text=f"Out Time: {tp[1].strip()}")
         except Exception:
             self.lbl_batch_id.config(text=f"Batch: {name}")
+            if hasattr(self, 'top_batch_id_label'):
+                self.top_batch_id_label.config(text=name)
         config.set('last_batch_path', str(path))
         self.navigator.load_folder(str(path), show_marked_only=self.show_marked_only_var.get())
         children = self.folder_tree.get_children()
@@ -485,15 +490,15 @@ class AIAttendanceMode:
         saved = config.get_subfolder_settings(name)
         global_val = self.default_brightness_var.get().strip()
         
-        has_override = saved.get('has_override', False)
-        if has_override:
-            self.current_brightness = saved.get('brightness', 100)
+        if global_val:
+            try:
+                self.current_brightness = int(global_val)
+            except ValueError:
+                self.current_brightness = 100
         else:
-            if global_val:
-                try:
-                    self.current_brightness = int(global_val)
-                except ValueError:
-                    self.current_brightness = 100
+            has_override = saved.get('has_override', False)
+            if has_override:
+                self.current_brightness = saved.get('brightness', 100)
             else:
                 self.current_brightness = 100
                 
@@ -594,35 +599,33 @@ class AIAttendanceMode:
         
         sf_name = self.navigator.get_current_subfolder_name()
         if not sf_name: return
-        saved = config.get_subfolder_settings(sf_name)
         
-        if not saved.get('has_override', False):
-            if val:
-                try:
-                    new_val = int(val)
-                    self.current_brightness = new_val
-                    self._updating_brightness = True
-                    try:
-                        self.brightness_var.set(new_val)
-                        self.brightness_label.config(text=f"{new_val}%")
-                    finally:
-                        self._updating_brightness = False
-                    if hasattr(self, 'image_display'):
-                        self.image_display.set_brightness(new_val)
-                        server.update_image(self.image_display.current_image)
-                except ValueError:
-                    pass
-            else:
-                self.current_brightness = 100
+        if val:
+            try:
+                new_val = int(val)
+                self.current_brightness = new_val
                 self._updating_brightness = True
                 try:
-                    self.brightness_var.set(100)
-                    self.brightness_label.config(text="100%")
+                    self.brightness_var.set(new_val)
+                    self.brightness_label.config(text=f"{new_val}%")
                 finally:
                     self._updating_brightness = False
                 if hasattr(self, 'image_display'):
-                    self.image_display.set_brightness(100)
+                    self.image_display.set_brightness(new_val)
                     server.update_image(self.image_display.current_image)
+            except ValueError:
+                pass
+        else:
+            self.current_brightness = 100
+            self._updating_brightness = True
+            try:
+                self.brightness_var.set(100)
+                self.brightness_label.config(text="100%")
+            finally:
+                self._updating_brightness = False
+            if hasattr(self, 'image_display'):
+                self.image_display.set_brightness(100)
+                server.update_image(self.image_display.current_image)
 
     def _prompt_brightness(self, event=None):
         from tkinter import simpledialog
@@ -1062,22 +1065,20 @@ class AIAttendanceMode:
         self._bind_keys()
         self.parent.focus_set()
         # Add global hotkey for A
-        if os.name == 'nt':
-            try:
-                keyboard.add_hotkey('a', lambda: self.parent.after(1, self._toggle_auto_attendance))
-            except:
-                pass
+        try:
+            keyboard.add_hotkey('a', lambda: self.parent.after(1, self._toggle_auto_attendance))
+        except:
+            pass
 
     def hide(self):
         self._unbind_keys()
         self.apply_layout_theme(False)
         self.frame.pack_forget()
         # Remove global hotkey
-        if os.name == 'nt':
-            try:
-                keyboard.remove_hotkey('a')
-            except:
-                pass
+        try:
+            keyboard.remove_hotkey('a')
+        except:
+            pass
 
     def _safe_back(self):
         self._unbind_keys()

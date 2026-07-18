@@ -69,10 +69,10 @@ class FolderNavigator:
                         tags = ['subfolder']
                         if normalized_sub in normalized_marked:
                             tags.append('marked')
+                        elif normalized_sub in normalized_success:
+                            tags.append('success')
                         if normalized_sub in normalized_not_working:
                             tags.append('not_working')
-                        if normalized_sub in normalized_success:
-                            tags.append('success')
                         self.tree.insert('', 'end', text=subfolder.name,
                                        values=(str(subfolder), 'subfolder'), tags=tuple(tags))
         except Exception as e:

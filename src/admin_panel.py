@@ -32,16 +32,18 @@ class AdminPanel:
         # Password Protection
         self.ask_password()
         
-        # Theme initialization
+        # Apply Clam theme for consistent UI across platforms (fixes macOS bugs)
         style = ttk.Style()
+        if "clam" in style.theme_names():
+            style.theme_use("clam")
             
         # Fix font sizes for high-DPI / macOS
         default_font = ("Arial", 13)
         style.configure(".", font=default_font)
         style.configure("TButton", font=default_font)
         style.configure("TNotebook.Tab", font=default_font, padding=[10, 2])
-        style.configure("Treeview", font=("Arial", 12), rowheight=28)
-        style.configure("Treeview.Heading", font=("Arial", 13, "bold"))
+        style.configure("Treeview", font=("Arial", 12), background="#333333", foreground="white", fieldbackground="#333333", rowheight=28)
+        style.configure("Treeview.Heading", font=("Arial", 13, "bold"), background="#444444", foreground="white")
 
         
         # Hardcoded Credentials for Portability
@@ -258,7 +260,7 @@ class AdminPanel:
             return
 
         from user_report_window import UserReportWindow
-        UserReportWindow(self.root, drive_manager, username, pin)
+        UserReportWindow(self.root, drive_manager, self.lm, username, pin)
 
     # ── Google Drive helpers ────────────────────────────────────────────────
 
@@ -269,10 +271,10 @@ class AdminPanel:
         sa_path = None
         # If we don't already have a saved key, ask the user to provide one
         import os
-        if not os.path.exists(drive_manager.sa_path):
+        if not os.path.exists(drive_manager.sa_path) and not os.path.exists(drive_manager.client_secrets_path) and not os.path.exists(drive_manager.token_path):
             sa_path = filedialog.askopenfilename(
                 parent=self.root,
-                title="Select Service Account JSON Key",
+                title="Select Service Account or OAuth Client Secrets JSON",
                 filetypes=[("JSON Files", "*.json")]
             )
             if not sa_path:
@@ -301,8 +303,8 @@ class AdminPanel:
     def _switch_account(self):
         """Revoke token and re-authenticate with a new Google account."""
         if messagebox.askyesno("Switch Account",
-                               "This will disconnect the current Service Account.\n"
-                               "You will be asked to provide a new JSON key file.\n\nContinue?",
+                               "This will disconnect the current Google Drive account.\n"
+                               "You will be asked to provide a new JSON credentials file.\n\nContinue?",
                                parent=self.root):
             drive_manager.revoke_and_disconnect()
             self._drive_email_lbl.config(text="")
@@ -313,7 +315,7 @@ class AdminPanel:
     def _start_drive_sync(self):
         """Auto-sync Drive cache on startup if already authenticated."""
         import os
-        if os.path.exists(drive_manager.sa_path):
+        if os.path.exists(drive_manager.sa_path) or os.path.exists(drive_manager.client_secrets_path) or os.path.exists(drive_manager.token_path):
             self._connect_drive()  # This will also trigger sync via the worker
 
     def _drive_sync_worker(self):

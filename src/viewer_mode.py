@@ -16,8 +16,105 @@ import shutil
 import server  # Import the new server module
 import pyautogui
 import attendance_report  # Daily log writer + midnight push
+from PIL import Image, ImageTk
 
 from footer import Footer
+
+class BrightnessDialog(tk.Toplevel):
+    """Custom dialog to adjust brightness with forced focus and dark theme"""
+    def __init__(self, parent, title, prompt):
+        super().__init__(parent)
+        self.title(title)
+        self.configure(bg="#1a1a2e")
+        self.resizable(False, False)
+        
+        # Center of the screen
+        sw = self.winfo_screenwidth()
+        sh = self.winfo_screenheight()
+        w, h = 300, 110
+        x = (sw - w) // 2
+        y = (sh - h) // 2
+        self.geometry(f"{w}x{h}+{x}+{y}")
+        
+        self.attributes("-topmost", True)
+        
+        # UI Elements
+        tk.Label(self, text=prompt, fg="white", bg="#1a1a2e", font=("Arial", 11, "bold")).pack(pady=(15, 5))
+        
+        self.entry_var = tk.StringVar()
+        self.entry = ttk.Entry(self, textvariable=self.entry_var, font=("Arial", 12), width=10, justify="center")
+        self.entry.pack(pady=5)
+        
+        tk.Label(self, text="Press Enter to OK  |  Esc to Cancel", fg="#8888aa", bg="#1a1a2e", font=("Arial", 8)).pack(pady=2)
+        
+        self.result = None
+        
+        # Bind keys
+        self.entry.bind("<Return>", self.on_ok)
+        self.bind("<Escape>", self.on_cancel)
+        
+        # Force map window to create OS HWND immediately
+        try:
+            self.update()
+        except:
+            pass
+            
+        # Force grab and focus
+        self.grab_set()
+        
+        # Deferred focus force to guarantee focus over other active apps
+        self.after(20, self.force_entry_focus)
+        self.after(100, self.force_entry_focus)
+        self.after(250, self.force_entry_focus)
+        
+        self.wait_window()
+        
+    def force_entry_focus(self):
+        try:
+            import ctypes
+            user32 = ctypes.windll.user32
+            kernel32 = ctypes.windll.kernel32
+            
+            hwnd = self.winfo_id()
+            parent_hwnd = user32.GetParent(hwnd)
+            target_hwnd = parent_hwnd if parent_hwnd else hwnd
+            
+            # Get foreground window and attach thread input to bypass OS focus stealing block
+            fore_hwnd = user32.GetForegroundWindow()
+            if fore_hwnd and fore_hwnd != target_hwnd:
+                fore_thread = user32.GetWindowThreadProcessId(fore_hwnd, None)
+                curr_thread = kernel32.GetCurrentThreadId()
+                
+                # Attach thread input
+                user32.AttachThreadInput(curr_thread, fore_thread, True)
+                
+                # Set foreground focus
+                user32.SetForegroundWindow(target_hwnd)
+                user32.SetActiveWindow(target_hwnd)
+                
+                # Detach thread input
+                user32.AttachThreadInput(curr_thread, fore_thread, False)
+            else:
+                user32.SetForegroundWindow(target_hwnd)
+                user32.SetActiveWindow(target_hwnd)
+        except Exception as e:
+            print(f"[Focus] Thread attach error: {e}")
+            
+        try:
+            self.entry.focus_force()
+            self.entry.focus_set()
+        except:
+            pass
+            
+    def on_ok(self, event=None):
+        val = self.entry_var.get().strip()
+        if val.isdigit():
+            self.result = int(val)
+        self.destroy()
+        
+    def on_cancel(self, event=None):
+        self.result = None
+        self.destroy()
 
 class ViewerMode:
     """Image Viewer Mode UI and logic"""
@@ -31,8 +128,7 @@ class ViewerMode:
         self.frame = ttk.Frame(parent)
         
         # Default Data Directory
-        from config import DATA_DIR
-        self.data_dir = DATA_DIR
+        self.data_dir = Path("C:/IR Attendance")
         if not self.data_dir.exists():
             try:
                 self.data_dir.mkdir(parents=True, exist_ok=True)
@@ -315,15 +411,23 @@ class ViewerMode:
         self.lbl_batch_id = ttk.Label(info_inner, text="Batch ID: ---", font=('Arial', 12, 'bold'))
         self.lbl_batch_id.pack(side=tk.LEFT, padx=10)
         
-        ttk.Label(info_inner, text="|", font=('Arial', 12)).pack(side=tk.LEFT)
+        # Pack In/Out times to the RIGHT
+        self.lbl_batch_out = ttk.Label(info_inner, text="Out Time: --:--", font=('Arial', 11))
+        self.lbl_batch_out.pack(side=tk.RIGHT, padx=10)
+        
+        self.lbl_to_sep = ttk.Label(info_inner, text="To", font=('Arial', 11))
+        self.lbl_to_sep.pack(side=tk.RIGHT, padx=5)
         
         self.lbl_batch_in = ttk.Label(info_inner, text="In Time: --:--", font=('Arial', 11))
-        self.lbl_batch_in.pack(side=tk.LEFT, padx=10)
+        self.lbl_batch_in.pack(side=tk.RIGHT, padx=10)
         
-        ttk.Label(info_inner, text="To", font=('Arial', 11)).pack(side=tk.LEFT)
+        self.lbl_time_sep = ttk.Label(info_inner, text="|", font=('Arial', 12))
+        self.lbl_time_sep.pack(side=tk.RIGHT, padx=5)
         
-        self.lbl_batch_out = ttk.Label(info_inner, text="Out Time: --:--", font=('Arial', 11))
-        self.lbl_batch_out.pack(side=tk.LEFT, padx=10)
+        # Center Attendance ID Label with bigger text
+        self.lbl_attendance_id_top = ttk.Label(info_inner, text="Attendance ID: ---", font=('Arial', 16, 'bold'), foreground='#1976D2')
+        self.lbl_attendance_id_top.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.lbl_attendance_id_top.config(anchor=tk.CENTER)
         
         # ── Auto Attendance Control Panel ──────────────────────────────────────
         if self.is_auto:
@@ -593,14 +697,14 @@ class ViewerMode:
                 messagebox.showerror("Error", f"Failed to import settings:\n{e}", parent=self.parent)
 
     def refresh_batch_list(self, force_load=False):
-        """Scan /Users/nidhay/Desktop/IRIS Data for folders and update dropdown"""
+        """Scan C:/IR Attendance for folders and update dropdown"""
         if not self.data_dir.exists():
             self.batch_combo['values'] = []
             return
             
         def _fetch_and_update():
             ended_batches = {}
-            if self.lm and self.lm.database_url and getattr(self.lm, 'activation_code', None):
+            if self.lm and self.lm.database_url and self.lm.activation_code:
                 try:
                     import requests
                     url = f"{self.lm.database_url}/sessions/{self.lm.activation_code}/ended_batches.json"
@@ -619,6 +723,8 @@ class ViewerMode:
                 for folder in self.data_dir.iterdir():
                     if folder.is_dir():
                         name = folder.name
+                        if name == 'Reports':
+                            continue
                         # Skip if this batch has been ended by admin
                         batch_id = name.split(' - ')[0].strip() if ' - ' in name else name
                         if ended_batches.get(batch_id):
@@ -675,6 +781,8 @@ class ViewerMode:
                 parts = batch_name.split(' - ')
                 batch_id = parts[0].strip()
                 self.lbl_batch_id.config(text=f"Batch ID: {batch_id}")
+                if hasattr(self, '_hud_batch_lbl') and self._hud_batch_lbl:
+                    self._hud_batch_lbl.config(text=f"Batch: {batch_id}")
                 
                 # 2. Get Times
                 if len(parts) > 1:
@@ -692,6 +800,8 @@ class ViewerMode:
             except Exception as e:
                 print(f"Error parsing folder name: {e}")
                 self.lbl_batch_id.config(text=f"Batch: {batch_name}")
+                if hasattr(self, '_hud_batch_lbl') and self._hud_batch_lbl:
+                    self._hud_batch_lbl.config(text=f"Batch: {batch_name}")
             
             # Save as last used
             config.set('last_batch_path', str(folder_path))
@@ -706,6 +816,9 @@ class ViewerMode:
                 self.folder_tree.focus(children[0])
                 self.folder_tree.focus_set() # Focus the tree for arrow navigation
                 # The selection_set above will trigger on_tree_select -> on_subfolder_change automatically
+            else:
+                if hasattr(self, 'lbl_attendance_id_top'):
+                    self.lbl_attendance_id_top.config(text="Attendance ID: ---")
 
 
     def browse_folder(self):
@@ -728,6 +841,8 @@ class ViewerMode:
         # Update Subfolder Name Label
         subfolder_name = subfolder_path.name
         self.image_display.update_subfolder_label(subfolder_name)
+        if hasattr(self, 'lbl_attendance_id_top'):
+            self.lbl_attendance_id_top.config(text=f"Attendance ID: {subfolder_name}")
         
         # Check marked state
         subfolder_str = str(subfolder_path)
@@ -777,15 +892,15 @@ class ViewerMode:
         saved = config.get_subfolder_settings(subfolder_name)
         global_val = self.default_brightness_var.get().strip()
         
-        has_override = saved.get('has_override', False)
-        if has_override:
-            self.current_brightness = saved.get('brightness', 100)
+        if global_val:
+            try:
+                self.current_brightness = int(global_val)
+            except ValueError:
+                self.current_brightness = 100
         else:
-            if global_val:
-                try:
-                    self.current_brightness = int(global_val)
-                except ValueError:
-                    self.current_brightness = 100
+            has_override = saved.get('has_override', False)
+            if has_override:
+                self.current_brightness = saved.get('brightness', 100)
             else:
                 self.current_brightness = 100
                 
@@ -794,8 +909,14 @@ class ViewerMode:
         
         self._updating_brightness = True
         try:
-            self.brightness_var.set(self.current_brightness)
-            self.brightness_label.config(text=f"{self.current_brightness}%")
+            if hasattr(self, 'brightness_slider'):
+                self.brightness_slider.configure(command="")
+            try:
+                self.brightness_var.set(self.current_brightness)
+                self.brightness_label.config(text=f"{self.current_brightness}%")
+            finally:
+                if hasattr(self, 'brightness_slider'):
+                    self.brightness_slider.configure(command=self.on_brightness_change)
         finally:
             self._updating_brightness = False
         
@@ -825,6 +946,8 @@ class ViewerMode:
             )
             # Update server with new loaded image
             server.update_image(self.image_display.current_image)
+            # Update PIP window image if active
+            self.update_pip_image()
     
     def navigate_left(self, event=None):
         """Navigate to previous image (Left arrow)"""
@@ -899,10 +1022,13 @@ class ViewerMode:
             # Update server with modified image
             server.update_image(self.image_display.current_image)
             
+            # Update PIP image if active
+            self.update_pip_image()
+            
             # Save to config for this subfolder
             subfolder_name = self.navigator.get_current_subfolder_name()
             if subfolder_name:
-                config.set_subfolder_settings(subfolder_name, new_brightness, self.current_zoom, override=True)
+                config.set_subfolder_settings(subfolder_name, new_brightness, self.current_zoom, has_override=True)
         except:
             pass
 
@@ -918,6 +1044,9 @@ class ViewerMode:
         # Update server with modified image
         server.update_image(self.image_display.current_image)
         
+        # Update PIP image if active
+        self.update_pip_image()
+        
         # Save to config for this subfolder (including current image index)
         if not getattr(self, '_updating_brightness', False):
             self._save_current_subfolder_state(override=True)
@@ -929,35 +1058,49 @@ class ViewerMode:
         
         sf_name = self.navigator.get_current_subfolder_name()
         if not sf_name: return
-        saved = config.get_subfolder_settings(sf_name)
         
-        if not saved.get('has_override', False):
-            if val:
+        if val:
+            try:
+                new_val = int(val)
+                self.current_brightness = new_val
+                self._updating_brightness = True
                 try:
-                    new_val = int(val)
-                    self.current_brightness = new_val
-                    self._updating_brightness = True
+                    if hasattr(self, 'brightness_slider'):
+                        self.brightness_slider.configure(command="")
                     try:
                         self.brightness_var.set(new_val)
                         self.brightness_label.config(text=f"{new_val}%")
                     finally:
-                        self._updating_brightness = False
+                        if hasattr(self, 'brightness_slider'):
+                            self.brightness_slider.configure(command=self.on_brightness_change)
                     if hasattr(self, 'image_display'):
                         self.image_display.set_brightness(new_val)
                     self.update_server_image()
-                except ValueError:
-                    pass
-            else:
-                self.current_brightness = 100
-                self._updating_brightness = True
+                    # Update PIP image if active
+                    self.update_pip_image()
+                finally:
+                    self._updating_brightness = False
+            except ValueError:
+                pass
+        else:
+            self.current_brightness = 100
+            self._updating_brightness = True
+            try:
+                if hasattr(self, 'brightness_slider'):
+                    self.brightness_slider.configure(command="")
                 try:
                     self.brightness_var.set(100)
                     self.brightness_label.config(text="100%")
                 finally:
-                    self._updating_brightness = False
+                    if hasattr(self, 'brightness_slider'):
+                        self.brightness_slider.configure(command=self.on_brightness_change)
                 if hasattr(self, 'image_display'):
                     self.image_display.set_brightness(100)
                 self.update_server_image()
+                # Update PIP image if active
+                self.update_pip_image()
+            finally:
+                self._updating_brightness = False
     
     def on_zoom_change(self, value):
         """Handle zoom change"""
@@ -1146,19 +1289,51 @@ class ViewerMode:
 
     def prompt_brightness(self, event=None):
         """Prompt user for absolute brightness percentage"""
-        from tkinter import simpledialog
-        val = simpledialog.askinteger("Brightness", "Enter brightness percentage:", 
-                                     parent=self.frame, minvalue=0, maxvalue=500)
+        if getattr(self, '_dialog_open', False):
+            return 'break'
+        self._dialog_open = True
+        
+        prev_hwnd = None
+        try:
+            import ctypes
+            prev_hwnd = ctypes.windll.user32.GetForegroundWindow()
+        except:
+            pass
+
+        try:
+            # DO NOT deiconify, lift, or change topmost of the main parent window!
+            # Just run update to process pending tkinter events.
+            self.parent.update()
+        except:
+            pass
+            
+        dialog = BrightnessDialog(self.parent, "Brightness", "Enter brightness percentage:")
+        val = dialog.result
+        
         if val is not None:
+            self.default_brightness_var.set(str(val))
             self.brightness_var.set(val)
             self.on_brightness_change(val)
-            
-        # Restore focus to navigation
-        self.parent.focus_force()
-        self.folder_tree.focus_set()
-        selection = self.folder_tree.selection()
-        if selection:
-            self.folder_tree.focus(selection[0])
+
+        # Restore focus to previous foreground window (e.g. BAS / Browser)
+        if prev_hwnd:
+            try:
+                import ctypes
+                ctypes.windll.user32.SetForegroundWindow(prev_hwnd)
+            except:
+                pass
+        else:
+            # Fallback: Restore focus to navigation
+            try:
+                self.parent.focus_force()
+                self.folder_tree.focus_set()
+                selection = self.folder_tree.selection()
+                if selection:
+                    self.folder_tree.focus(selection[0])
+            except:
+                pass
+                
+        self._dialog_open = False
         return 'break'
             
     def toggle_mark(self, event=None):
@@ -1365,7 +1540,10 @@ class ViewerMode:
                 self._attendance_times[folder_path] = times
         else:
             err_msg = message if message else "Failed"
-            status_text = f"Failed : {err_msg}"
+            if err_msg.startswith("Opening"):
+                status_text = err_msg
+            else:
+                status_text = f"Failed : {err_msg}"
             fg_color = "red"
             
         if folder_path:
@@ -1405,8 +1583,19 @@ class ViewerMode:
         self._bind_keys()
         # Ensure keyboard bindings are active
         self.parent.focus_set()
+        
         # Add global hotkeys for Auto Mode (work even when BAS window is focused)
-        if self.is_auto and os.name == 'nt':
+        if self.is_auto:
+            # Global hotkeys for brightness (work only in auto mode)
+            try:
+                keyboard.add_hotkey('b', lambda: self.parent.after(1, self.prompt_brightness))
+            except:
+                pass
+            try:
+                keyboard.add_hotkey('B', lambda: self.parent.after(1, self.prompt_brightness))
+            except:
+                pass
+
             try:
                 keyboard.add_hotkey('a', lambda: self.parent.after(1, self.toggle_auto_attendance))
             except:
@@ -1419,16 +1608,24 @@ class ViewerMode:
                 keyboard.add_hotkey('left', lambda: self.parent.after(1, self.navigate_left))
             except:
                 pass
+            try:
+                keyboard.add_hotkey('up', lambda: self.parent.after(1, self.navigate_up))
+            except:
+                pass
+            try:
+                keyboard.add_hotkey('down', lambda: self.parent.after(1, self.navigate_down))
+            except:
+                pass
         # Start midnight push worker for Google Drive
         try:
-            username = self.lm.username if hasattr(self.lm, 'username') and self.lm.username else "default"
+            _username = config.get("license_user") or (self.lm.username if hasattr(self.lm, 'username') and self.lm.username else "default")
             def _get_dm():
                 try:
                     from drive_manager import drive_manager
                     return drive_manager
                 except Exception:
                     return None
-            attendance_report.start_midnight_push_worker(username, _get_dm)
+            attendance_report.start_midnight_push_worker(_username, _get_dm)
         except Exception as _mpe:
             print(f"[MidnightPush] Could not start worker: {_mpe}")
     
@@ -1438,8 +1635,17 @@ class ViewerMode:
         self._unbind_keys()
         self.apply_layout_theme(False)
         self.frame.pack_forget()
-        # Remove global hotkeys
-        if self.is_auto and os.name == 'nt':
+        
+        # Remove global hotkeys for Auto Mode
+        if self.is_auto:
+            try:
+                keyboard.remove_hotkey('b')
+            except:
+                pass
+            try:
+                keyboard.remove_hotkey('B')
+            except:
+                pass
             try:
                 keyboard.remove_hotkey('a')
             except:
@@ -1452,16 +1658,39 @@ class ViewerMode:
                 keyboard.remove_hotkey('left')
             except:
                 pass
+            try:
+                keyboard.remove_hotkey('up')
+            except:
+                pass
+            try:
+                keyboard.remove_hotkey('down')
+            except:
+                pass
+                
+        # Withdraw/destroy PIP window if active
+        if hasattr(self, 'pip_window') and self.pip_window:
+            try:
+                self.pip_window.destroy()
+            except:
+                pass
+            self.pip_window = None
 
     def _bind_keys(self):
         if self.is_auto:
             self.parent.bind('<Control-Return>', self.execute_macro)
             self.parent.bind('<Return>', lambda e: 'break')
+            
+            # Bind local brightness keys ONLY in auto mode
+            self.parent.bind('<Key-b>', self.prompt_brightness)
+            self.parent.bind('<Key-B>', self.prompt_brightness)
+            self.folder_tree.bind('<Key-b>', self.prompt_brightness)
+            self.folder_tree.bind('<Key-B>', self.prompt_brightness)
+            if hasattr(self, 'image_canvas'):
+                self.image_canvas.bind('<Key-b>', self.prompt_brightness)
+                self.image_canvas.bind('<Key-B>', self.prompt_brightness)
         else:
             self.parent.bind('<Return>', self.execute_macro)
             
-        self.parent.bind('<Key-b>', self.prompt_brightness)
-        self.parent.bind('<Key-B>', self.prompt_brightness)
         self.parent.bind('<Key-m>', self.toggle_mark)
         self.parent.bind('<Key-M>', self.toggle_mark)
         self.parent.bind('<Key-n>', self.toggle_not_working)
@@ -1469,16 +1698,12 @@ class ViewerMode:
         
         self.folder_tree.bind('<Key-m>', self.toggle_mark)
         self.folder_tree.bind('<Key-M>', self.toggle_mark)
-        self.folder_tree.bind('<Key-b>', self.prompt_brightness)
-        self.folder_tree.bind('<Key-B>', self.prompt_brightness)
         self.folder_tree.bind('<Key-n>', self.toggle_not_working)
         self.folder_tree.bind('<Key-N>', self.toggle_not_working)
         
         if hasattr(self, 'image_canvas'):
             self.image_canvas.bind('<Key-m>', self.toggle_mark)
             self.image_canvas.bind('<Key-M>', self.toggle_mark)
-            self.image_canvas.bind('<Key-b>', self.prompt_brightness)
-            self.image_canvas.bind('<Key-B>', self.prompt_brightness)
             self.image_canvas.bind('<Key-n>', self.toggle_not_working)
             self.image_canvas.bind('<Key-N>', self.toggle_not_working)
 
@@ -1569,6 +1794,8 @@ class ViewerMode:
                     tags = list(self.folder_tree.item(child, 'tags'))
                     if 'marked' not in tags:
                         tags.append('marked')
+                    if 'success' in tags:
+                        tags.remove('success')
                     self.folder_tree.item(child, tags=tuple(tags))
                     break
             
@@ -1670,6 +1897,8 @@ class ViewerMode:
         if hasattr(self, 'image_display') and self.image_display:
             # Send processed_image (brightness applied, full resolution) for clean mirror
             server.update_image(self.image_display.current_image)
+            # Update PIP window image if active
+            self.update_pip_image()
 
     def _save_current_subfolder_state(self, override=None):
         """Persist current brightness, zoom, and image index for the active subfolder"""
@@ -1723,6 +1952,10 @@ class ViewerMode:
         self.auto_status_var.set("ON")
         self.auto_status_lbl.config(fg="green")
         self._hud_show()
+        # Create and display the PIP window
+        if not hasattr(self, 'pip_window') or not self.pip_window:
+            self.create_pip_window()
+        self.update_pip_image()
         self.run_auto_step()
 
     def stop_auto_attendance(self):
@@ -1734,6 +1967,96 @@ class ViewerMode:
             self.auto_job = None
         self.auto_overlay.withdraw()
         self._hud_hide()
+        # Withdraw the PIP window
+        if hasattr(self, 'pip_window') and self.pip_window:
+            try:
+                self.pip_window.withdraw()
+            except:
+                pass
+
+    def create_pip_window(self):
+        """Create the borderless PIP window for auto attendance mode"""
+        if not self.is_auto:
+            return
+        try:
+            self.pip_window = tk.Toplevel(self.parent)
+            self.pip_window.title("PIP Mode")
+            self.pip_window.overrideredirect(True)
+            self.pip_window.attributes("-topmost", True)
+            
+            # Container for image
+            self.pip_label = tk.Label(self.pip_window, bg="black")
+            self.pip_label.pack(fill=tk.BOTH, expand=True)
+            
+            # Default geometry
+            sw = self.parent.winfo_screenwidth()
+            sh = self.parent.winfo_screenheight()
+            self.pip_window.geometry(f"300x200+{sw-320}+{sh-260}")
+            self.pip_window.withdraw()
+            
+            # Bind drag events
+            self.pip_label.bind("<ButtonPress-1>", self.start_pip_drag)
+            self.pip_label.bind("<B1-Motion>", self.drag_pip)
+        except Exception as e:
+            print(f"[PIP] Create error: {e}")
+            self.pip_window = None
+
+    def start_pip_drag(self, event):
+        self.pip_drag_x = event.x
+        self.pip_drag_y = event.y
+
+    def drag_pip(self, event):
+        if not self.pip_window:
+            return
+        dx = event.x - self.pip_drag_x
+        dy = event.y - self.pip_drag_y
+        x = self.pip_window.winfo_x() + dx
+        y = self.pip_window.winfo_y() + dy
+        self.pip_window.geometry(f"+{x}+{y}")
+
+    def update_pip_image(self):
+        """Update the image in the PIP window, scaled to 60%"""
+        if not hasattr(self, 'pip_window') or not self.pip_window or not self.is_auto_running:
+            return
+        try:
+            img = self.image_display.current_image
+            if not img:
+                self.pip_label.config(image='')
+                self._pip_photo = None
+                return
+                
+            w, h = img.size
+            pip_w = max(1, int(w * 0.6))
+            pip_h = max(1, int(h * 0.6))
+            
+            # Resize image to 60%
+            resized_img = img.resize((pip_w, pip_h), Image.Resampling.LANCZOS)
+            self._pip_photo = ImageTk.PhotoImage(resized_img)
+            self.pip_label.config(image=self._pip_photo)
+            self.pip_label.image = self._pip_photo # Prevent garbage collection on widget level
+            
+            sw = self.parent.winfo_screenwidth()
+            sh = self.parent.winfo_screenheight()
+            
+            # Set geometry relative to current position or bottom-right default
+            x = self.pip_window.winfo_x()
+            y = self.pip_window.winfo_y()
+            if x <= 0 or y <= 0 or x > sw or y > sh:
+                x = sw - pip_w - 20
+                y = sh - pip_h - 80
+                
+            self.pip_window.geometry(f"{pip_w}x{pip_h}+{x}+{y}")
+            self.pip_window.deiconify()
+            self.pip_window.lift()
+            
+            # Force window update to redraw the updated brightness instantly
+            try:
+                self.pip_window.update_idletasks()
+                self.pip_window.update()
+            except:
+                pass
+        except Exception as e:
+            print(f"[PIP] Update error: {e}")
 
     def sync_overlay(self):
         try:
@@ -1992,19 +2315,15 @@ class ViewerMode:
                     # 2.5 Handle T&C automation if enabled
                     if config.get('pc_tnc_enabled', False):
                         pc_coords = config.get('pc_tnc_coords', {})
-                        if pc_coords and "checkbox" in pc_coords and "ok_btn" in pc_coords and "yes_btn" in pc_coords:
+                        if pc_coords and "checkbox" in pc_coords:
                             # Wait for the T&C consent popup (1.2 seconds)
                             time.sleep(1.2)
                             # Click checkbox
                             import pyautogui
                             pyautogui.click(pc_coords['checkbox']['x'], pc_coords['checkbox']['y'])
-                            time.sleep(0.3)
-                            # Click OK button
-                            pyautogui.click(pc_coords['ok_btn']['x'], pc_coords['ok_btn']['y'])
-                            # Wait for save consent popup (1.0 seconds)
-                            time.sleep(1.0)
-                            # Click Yes button
-                            pyautogui.click(pc_coords['yes_btn']['x'], pc_coords['yes_btn']['y'])
+                            time.sleep(0.5)
+                            # Press enter to confirm yes
+                            keyboard.send('enter')
                             time.sleep(0.3)
 
                     # 3.5 After 5.5 seconds, increase brightness by 1% to refresh RD service display
@@ -2080,14 +2399,49 @@ class ViewerMode:
                         _evt_time = _dt.datetime.now().strftime("%H:%M:%S")
                         # Determine if opening or closing
                         already_marked = path_str in config.get('success_folders', [])
-                        is_opening = "opening" in text or "open" in text
-                        is_closing = "closing" in text or "close" in text
+                        clean_text = "".join(text.split())
+                        is_opening = False
+                        is_closing = False
                         
+                        # Explicit keyword matching without spacing
+                        if "attendancetype:closing" in clean_text or "type:closing" in clean_text or "typeclosing" in clean_text:
+                            is_closing = True
+                        elif "attendancetype:opening" in clean_text or "type:opening" in clean_text or "typeopening" in clean_text:
+                            is_opening = True
+                            
+                        # If still not detected, check proximity (next 15 chars after label)
                         if not is_opening and not is_closing:
-                            if already_marked:
+                            if "attendancetype" in clean_text:
+                                idx = clean_text.find("attendancetype")
+                                val_part = clean_text[idx + len("attendancetype"):idx + len("attendancetype") + 15]
+                                if "closing" in val_part or "close" in val_part:
+                                    is_closing = True
+                                elif "opening" in val_part or "open" in val_part:
+                                    is_opening = True
+                                    
+                        if not is_opening and not is_closing:
+                            if "type" in clean_text:
+                                idx = clean_text.find("type")
+                                val_part = clean_text[idx + len("type"):idx + len("type") + 15]
+                                if "closing" in val_part or "close" in val_part:
+                                    is_closing = True
+                                elif "opening" in val_part or "open" in val_part:
+                                    is_opening = True
+                                
+                        if not is_opening and not is_closing:
+                            has_close = "closing" in text or "close" in text
+                            has_open = "opening" in text or "open" in text
+                            if has_close and has_open:
                                 is_closing = True
-                            else:
+                            elif has_close:
+                                is_closing = True
+                            elif has_open:
                                 is_opening = True
+                            else:
+                                if already_marked:
+                                    is_closing = True
+                                else:
+                                    is_opening = True
                                 
                         att_type = "opening" if is_opening else ("closing" if is_closing else None)
                         if is_opening:
@@ -2102,7 +2456,7 @@ class ViewerMode:
                             _in_t = self.lbl_batch_in.cget("text").replace("In Time: ", "").strip() if hasattr(self, 'lbl_batch_in') else ""
                             _out_t = self.lbl_batch_out.cget("text").replace("Out Time: ", "").strip() if hasattr(self, 'lbl_batch_out') else ""
                             _total = len(self.navigator.subfolders) if hasattr(self, 'navigator') and self.navigator.subfolders else 0
-                            _username = self.lm.username if hasattr(self, 'lm') and self.lm and getattr(self.lm, 'username', None) else "default"
+                            _username = config.get("license_user") or (self.lm.username if hasattr(self.lm, 'username') and self.lm.username else "default")
                             attendance_report.log_attendance_event(
                                 attendance_id=subfolder_name,
                                 batch_id=_batch_id_raw,
@@ -2128,12 +2482,12 @@ class ViewerMode:
                         # Switch back to IR Attendance directly (don't rely on alt+tab)
                         self.parent.after(0, self.window_manager.bring_to_front)
                         time.sleep(0.4)
-                        
-                        # Unmark if we are in "Show Failed Only" mode
-                        if getattr(self, 'show_marked_only_var', None) and self.show_marked_only_var.get():
-                            self.parent.after(0, self.toggle_mark_force_normal)
-                            time.sleep(0.1)
-                            
+
+                        # Always remove M mark on success (opening → green, closing → default).
+                        # This applies whether "Show Marked Only" toggle is ON or OFF.
+                        self.parent.after(0, self.toggle_mark_force_normal)
+                        time.sleep(0.1)
+
                         # Navigate to next student immediately (no countdown)
                         self.parent.after(0, self.navigate_and_continue_full_auto)
                         return
@@ -2159,22 +2513,58 @@ class ViewerMode:
                                 else:
                                     err_msg = kw.title()
                                 break
-                    self.parent.after(0, lambda m=err_msg, p=path_str: self.update_attendance_status(False, m, folder_path=p))
+                    was_already_success = path_str in config.get('success_folders', [])
+                    if was_already_success:
+                        times = getattr(self, '_attendance_times', {}).get(path_str, {})
+                        op_time = times.get('opening', '')
+                        msg = f"Opening : {op_time}" if op_time else "Opening : —"
+                        self.parent.after(0, lambda txt=msg, p=path_str: self.update_attendance_status(False, message=txt, folder_path=p))
+                    else:
+                        self.parent.after(0, lambda m=err_msg, p=path_str: self.update_attendance_status(False, m, folder_path=p))
 
-                    # Press Enter / OK to close the error popup
-                    keyboard.send('enter')
-                    time.sleep(0.3)
-                    keyboard.send('esc')
-                    time.sleep(0.3)
+                    # ── Dismiss the error popup ──────────────────────────────────
+                    if is_pid_xml_error:
+                        self._dismiss_pid_xml_error()
+                    elif err_msg == "Internal Server Error":
+                        # Try Esc first to close the inner error dialog
+                        keyboard.send('esc')
+                        time.sleep(0.4)
+                        keyboard.send('enter')
+                        time.sleep(0.4)
+                        # One more Esc in case a secondary dialog appeared
+                        keyboard.send('esc')
+                        time.sleep(0.5)
+                    else:
+                        keyboard.send('enter')
+                        time.sleep(0.3)
+                        keyboard.send('esc')
+                        time.sleep(0.3)
                     # Switch back to IR Attendance directly using Win32
                     self.parent.after(0, self.window_manager.bring_to_front)
                     time.sleep(0.4)
 
                 # Attempt exhausted — mark folder red and move to next
+                was_already_success = path_str in config.get('success_folders', [])
                 if not found_success and not found_error:
-                    self.parent.after(0, lambda p=path_str: self.update_attendance_status(False, "Timeout / Device Not Responding", folder_path=p))
+                    if was_already_success:
+                        times = getattr(self, '_attendance_times', {}).get(path_str, {})
+                        op_time = times.get('opening', '')
+                        msg = f"Opening : {op_time}" if op_time else "Opening : —"
+                        self.parent.after(0, lambda txt=msg, p=path_str: self.update_attendance_status(False, message=txt, folder_path=p))
+                    else:
+                        self.parent.after(0, lambda p=path_str: self.update_attendance_status(False, "Timeout / Device Not Responding", folder_path=p))
                 self.parent.after(0, self.toggle_mark_force_red)
-                time.sleep(0.1)
+                # PID XML needs the longest settle — the BAS RD service must fully
+                # recover before the next OCR cycle, otherwise the lingering exception
+                # dialog text immediately triggers another found_error on the next student.
+                # ISE needs 1.2s. PID XML needs 2.5s for the same reason but worse.
+                if is_pid_xml_error:
+                    _settle = 2.5
+                elif err_msg == "Internal Server Error":
+                    _settle = 1.2
+                else:
+                    _settle = 0.1
+                time.sleep(_settle)
                 self.parent.after(200, self.navigate_and_continue_full_auto)
                 return
 
@@ -2215,19 +2605,15 @@ class ViewerMode:
                     # 2.5 Handle T&C automation if enabled
                     if config.get('pc_tnc_enabled', False):
                         pc_coords = config.get('pc_tnc_coords', {})
-                        if pc_coords and "checkbox" in pc_coords and "ok_btn" in pc_coords and "yes_btn" in pc_coords:
+                        if pc_coords and "checkbox" in pc_coords:
                             # Wait for the T&C consent popup (1.2 seconds)
                             time.sleep(1.2)
                             # Click checkbox
                             import pyautogui
                             pyautogui.click(pc_coords['checkbox']['x'], pc_coords['checkbox']['y'])
-                            time.sleep(0.3)
-                            # Click OK button
-                            pyautogui.click(pc_coords['ok_btn']['x'], pc_coords['ok_btn']['y'])
-                            # Wait for save consent popup (1.0 seconds)
-                            time.sleep(1.0)
-                            # Click Yes button
-                            pyautogui.click(pc_coords['yes_btn']['x'], pc_coords['yes_btn']['y'])
+                            time.sleep(0.5)
+                            # Press enter to confirm yes
+                            keyboard.send('enter')
                             time.sleep(0.3)
                     
                     # 3. Poll for success (checks for "Attendance type") or error
@@ -2276,15 +2662,50 @@ class ViewerMode:
                     import datetime as _dt2
                     _evt_time2 = _dt2.datetime.now().strftime("%H:%M:%S")
                     already_marked = path_str in config.get('success_folders', [])
-                    is_opening = "opening" in text or "open" in text
-                    is_closing = "closing" in text or "close" in text
+                    clean_text2 = "".join(text.split())
+                    is_opening = False
+                    is_closing = False
                     
+                    # Explicit keyword matching without spacing
+                    if "attendancetype:closing" in clean_text2 or "type:closing" in clean_text2 or "typeclosing" in clean_text2:
+                        is_closing = True
+                    elif "attendancetype:opening" in clean_text2 or "type:opening" in clean_text2 or "typeopening" in clean_text2:
+                        is_opening = True
+                        
+                    # If still not detected, check proximity (next 15 chars after label)
                     if not is_opening and not is_closing:
-                        if already_marked:
-                            is_closing = True
-                        else:
-                            is_opening = True
+                        if "attendancetype" in clean_text2:
+                            idx = clean_text2.find("attendancetype")
+                            val_part = clean_text2[idx + len("attendancetype"):idx + len("attendancetype") + 15]
+                            if "closing" in val_part or "close" in val_part:
+                                is_closing = True
+                            elif "opening" in val_part or "open" in val_part:
+                                is_opening = True
+                                
+                    if not is_opening and not is_closing:
+                        if "type" in clean_text2:
+                            idx = clean_text2.find("type")
+                            val_part = clean_text2[idx + len("type"):idx + len("type") + 15]
+                            if "closing" in val_part or "close" in val_part:
+                                is_closing = True
+                            elif "opening" in val_part or "open" in val_part:
+                                is_opening = True
                             
+                    if not is_opening and not is_closing:
+                        has_close = "closing" in text or "close" in text
+                        has_open = "opening" in text or "open" in text
+                        if has_close and has_open:
+                            is_closing = True
+                        elif has_close:
+                            is_closing = True
+                        elif has_open:
+                            is_opening = True
+                        else:
+                            if already_marked:
+                                is_closing = True
+                            else:
+                                is_opening = True
+                                
                     att_type2 = "opening" if is_opening else ("closing" if is_closing else None)
                     if is_opening:
                         self.parent.after(0, lambda p=path_str: self.mark_subfolder_success(p))
@@ -2298,7 +2719,7 @@ class ViewerMode:
                         _in_t2 = self.lbl_batch_in.cget("text").replace("In Time: ", "").strip() if hasattr(self, 'lbl_batch_in') else ""
                         _out_t2 = self.lbl_batch_out.cget("text").replace("Out Time: ", "").strip() if hasattr(self, 'lbl_batch_out') else ""
                         _total2 = len(self.navigator.subfolders) if hasattr(self, 'navigator') and self.navigator.subfolders else 0
-                        _username2 = self.lm.username if hasattr(self, 'lm') and self.lm and getattr(self.lm, 'username', None) else "default"
+                        _username2 = config.get("license_user") or (self.lm.username if hasattr(self.lm, 'username') and self.lm.username else "default")
                         attendance_report.log_attendance_event(
                             attendance_id=subfolder_name,
                             batch_id=_batch_id_raw2,
@@ -2314,9 +2735,12 @@ class ViewerMode:
                         print(f"[Log] Write error: {_log_err2}")
 
                     self.parent.after(0, lambda p=path_str, at=att_type2: self.update_attendance_status(True, folder_path=p, attendance_type=at))
-                else:
+                    # Always remove M mark on success (opening → green, closing → default).
+                    # This applies whether "Show Marked Only" toggle is ON or OFF.
+                    self.parent.after(0, self.toggle_mark_force_normal)
                     # If it was an error, close the popup first
                     err_msg = "Failed"
+                    was_already_success = path_str in config.get('success_folders', [])
                     if found_error:
                         if is_pid_xml_error:
                             err_msg = "PID XML deserialization error"
@@ -2336,14 +2760,31 @@ class ViewerMode:
                                     else:
                                         err_msg = kw.title()
                                     break
-                        self.parent.after(0, lambda m=err_msg, p=path_str: self.update_attendance_status(False, m, folder_path=p))
                         
-                        keyboard.send('enter')
-                        time.sleep(0.3)
-                        keyboard.send('esc')
-                        time.sleep(0.3)
+                        if was_already_success:
+                            times = getattr(self, '_attendance_times', {}).get(path_str, {})
+                            op_time = times.get('opening', '')
+                            msg = f"Opening : {op_time}" if op_time else "Opening : —"
+                            self.parent.after(0, lambda txt=msg, p=path_str: self.update_attendance_status(False, message=txt, folder_path=p))
+                        else:
+                            self.parent.after(0, lambda m=err_msg, p=path_str: self.update_attendance_status(False, m, folder_path=p))
+                        
+                        # Aggressive dismiss for PID XML error or standard dismiss
+                        if is_pid_xml_error:
+                            self._dismiss_pid_xml_error()
+                        else:
+                            keyboard.send('enter')
+                            time.sleep(0.3)
+                            keyboard.send('esc')
+                            time.sleep(0.3)
                     else:
-                        self.parent.after(0, lambda p=path_str: self.update_attendance_status(False, "Timeout / Device Not Responding", folder_path=p))
+                        if was_already_success:
+                            times = getattr(self, '_attendance_times', {}).get(path_str, {})
+                            op_time = times.get('opening', '')
+                            msg = f"Opening : {op_time}" if op_time else "Opening : —"
+                            self.parent.after(0, lambda txt=msg, p=path_str: self.update_attendance_status(False, message=txt, folder_path=p))
+                        else:
+                            self.parent.after(0, lambda p=path_str: self.update_attendance_status(False, "Timeout / Device Not Responding", folder_path=p))
 
                     # Force a red mark (failed)
                     self.parent.after(0, self.toggle_mark_force_red)
@@ -2363,6 +2804,27 @@ class ViewerMode:
         except Exception as e:
             self.parent.after(0, lambda: messagebox.showerror("Error", f"Macro failed: {e}"))
             self.parent.after(0, self.stop_auto_attendance)
+
+    def _dismiss_pid_xml_error(self):
+        """Dismiss the PID XML error dialog by pressing enter and alt-tabbing back to IR Attendance"""
+        import time
+        import keyboard
+        
+        print("[Macro] Dismissing PID XML error dialog (pressing enter)...")
+        keyboard.send('enter')
+        time.sleep(0.3)
+        
+        # Press Alt+Tab to switch back to IR Attendance
+        keyboard.press('alt')
+        keyboard.press('tab')
+        time.sleep(0.05)
+        keyboard.release('tab')
+        keyboard.release('alt')
+        time.sleep(0.4)
+        
+        # Ensure our window is properly focused using Win32
+        self.parent.after(0, self.window_manager.bring_to_front)
+        time.sleep(0.2)
 
     def navigate_and_continue_full_auto(self):
         """Full Auto Mode: immediately navigate to next subfolder and trigger next step."""
@@ -2510,10 +2972,10 @@ class ViewerMode:
             self._hud_dot_canvas.pack(side=tk.LEFT, padx=(0, 6))
             self._hud_dot = self._hud_dot_canvas.create_oval(2, 2, 16, 16, fill="#e53935", outline="")
 
-            # Attendance ID label
-            self._hud_id_lbl = tk.Label(left_frame, text="—", font=("Arial", 13, "bold"),
-                                         fg="white", bg="#1a1a2e")
-            self._hud_id_lbl.pack(side=tk.LEFT)
+            # Batch ID label on left of HUD
+            self._hud_batch_lbl = tk.Label(left_frame, text="Batch: ---", font=("Arial", 11, "bold"),
+                                           fg="#aaaaaa", bg="#1a1a2e")
+            self._hud_batch_lbl.pack(side=tk.LEFT, padx=(5, 10))
 
             # ── Right section ────────────────────────────────────
             right_frame = tk.Frame(self.hud_bar, bg="#1a1a2e")
@@ -2522,6 +2984,15 @@ class ViewerMode:
             self._hud_stats_lbl = tk.Label(right_frame, text="M: 0  |  N: 0  |  ✓: 0  |  Total: 0  |  #0",
                                             font=("Arial", 10), fg="#aaaaaa", bg="#1a1a2e")
             self._hud_stats_lbl.pack(side=tk.RIGHT)
+
+            # ── Center section ───────────────────────────────────
+            center_frame = tk.Frame(self.hud_bar, bg="#1a1a2e")
+            center_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, pady=4)
+
+            # Attendance ID label centered with bigger text
+            self._hud_id_lbl = tk.Label(center_frame, text="—", font=("Arial", 18, "bold"),
+                                         fg="#00E5FF", bg="#1a1a2e", anchor=tk.CENTER)
+            self._hud_id_lbl.pack(fill=tk.X, expand=True)
 
         except Exception as e:
             print(f"[HUD] Create error: {e}")
@@ -2638,10 +3109,9 @@ class PcTncCalibrationWindow(tk.Toplevel):
         if not isinstance(self.coords, dict):
             self.coords = {}
         
-        self.steps = ["checkbox", "confirm_btn"]
+        self.steps = ["checkbox"]
         self.step_descriptions = {
-            "checkbox": "1. Click exactly on the T&C Checkbox",
-            "confirm_btn": "2. Click exactly on the OK / Yes button"
+            "checkbox": "Click exactly on the T&C Checkbox"
         }
         self.current_step_idx = 0
         
@@ -2664,11 +3134,7 @@ class PcTncCalibrationWindow(tk.Toplevel):
         x, y = self.winfo_pointerx(), self.winfo_pointery()
         step_key = self.steps[self.current_step_idx]
         
-        if step_key == "confirm_btn":
-            self.coords["ok_btn"] = {"x": x, "y": y}
-            self.coords["yes_btn"] = {"x": x, "y": y}
-        else:
-            self.coords[step_key] = {"x": x, "y": y}
+        self.coords[step_key] = {"x": x, "y": y}
         
         # Draw visual feedback indicator on the overlay
         canvas = tk.Canvas(self, width=40, height=40, bg='black', highlightthickness=0)
