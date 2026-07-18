@@ -10,7 +10,7 @@ def get_data_dir():
     if sys.platform == "win32":
         return Path("C:/IR Attendance")
     else:
-        return Path("/Users/nidhay/Desktop/IRIS Data")
+        return Path.home() / "Desktop" / "IRIS Data"
 
 DATA_DIR = get_data_dir()
 

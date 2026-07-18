@@ -600,7 +600,7 @@ class ViewerMode:
             
         def _fetch_and_update():
             ended_batches = {}
-            if self.lm and self.lm.database_url and self.lm.activation_code:
+            if self.lm and self.lm.database_url and getattr(self.lm, 'activation_code', None):
                 try:
                     import requests
                     url = f"{self.lm.database_url}/sessions/{self.lm.activation_code}/ended_batches.json"

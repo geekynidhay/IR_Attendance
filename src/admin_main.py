@@ -63,29 +63,14 @@ class IRAdminApp:
     def setup_style(self):
         style = ttk.Style()
         
-        # Apply dark theme style
-        bg_color = '#121212'
-        fg_color = '#E0E0E0'
-        accent_color = '#00D4FF'
-        card_bg = '#1E1E1E'
-        
-        style.configure('.', background=bg_color, foreground=fg_color)
-        style.configure('TFrame', background=bg_color)
-        style.configure('TLabel', background=bg_color, foreground=fg_color)
-        style.configure('Title.TLabel', font=('Segoe UI', 26, 'bold'), foreground=accent_color, background=bg_color)
-        style.configure('Subtitle.TLabel', font=('Segoe UI', 11), foreground='#AAAAAA', background=bg_color)
-        
-        # Configure input fields (avoid white-on-white text)
+        # Configure input fields
         style.configure('TEntry', foreground='#000000', fieldbackground='#ffffff', insertcolor='#000000')
         style.configure('TCombobox', foreground='#000000', fieldbackground='#ffffff', insertcolor='#000000')
         style.configure('TSpinbox', foreground='#000000', fieldbackground='#ffffff', insertcolor='#000000')
         
-        # Treeview style for dark theme
-        style.configure('Treeview', background='#1E1E1E', foreground='#E0E0E0', fieldbackground='#1E1E1E')
-        style.map('Treeview', background=[('selected', '#1976D2')], foreground=[('selected', '#FFFFFF')])
-        
-        style.configure('TLabelframe', background=bg_color, bordercolor='#333333')
-        style.configure('TLabelframe.Label', background=bg_color, foreground=accent_color, font=('Segoe UI', 11, 'bold'))
+        # Titles
+        style.configure('Title.TLabel', font=('Segoe UI', 26, 'bold'))
+        style.configure('Subtitle.TLabel', font=('Segoe UI', 11))
 
     def create_menu(self):
         """Create clean Admin dashboard menu"""

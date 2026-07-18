@@ -32,18 +32,16 @@ class AdminPanel:
         # Password Protection
         self.ask_password()
         
-        # Apply Clam theme for consistent UI across platforms (fixes macOS bugs)
+        # Theme initialization
         style = ttk.Style()
-        if "clam" in style.theme_names():
-            style.theme_use("clam")
             
         # Fix font sizes for high-DPI / macOS
         default_font = ("Arial", 13)
         style.configure(".", font=default_font)
         style.configure("TButton", font=default_font)
         style.configure("TNotebook.Tab", font=default_font, padding=[10, 2])
-        style.configure("Treeview", font=("Arial", 12), background="#333333", foreground="white", fieldbackground="#333333", rowheight=28)
-        style.configure("Treeview.Heading", font=("Arial", 13, "bold"), background="#444444", foreground="white")
+        style.configure("Treeview", font=("Arial", 12), rowheight=28)
+        style.configure("Treeview.Heading", font=("Arial", 13, "bold"))
 
         
         # Hardcoded Credentials for Portability

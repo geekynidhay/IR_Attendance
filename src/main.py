@@ -201,22 +201,21 @@ class WelcomeScreen:
         self.username = username
         self.on_complete = on_complete
         
-        # Use a nice dark background
-        self.frame = tk.Frame(root, bg='#121212') 
+        # Main container
+        self.frame = tk.Frame(root) 
         self.frame.pack(fill=tk.BOTH, expand=True)
         
         # Centering container
-        container = tk.Frame(self.frame, bg='#121212')
+        container = tk.Frame(self.frame)
         container.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         
         # Greeting label parts
-        hi_label = tk.Label(container, text="Hi, ", font=('Segoe UI', 32), 
-                           fg='#E0E0E0', bg='#121212')
+        hi_label = tk.Label(container, text="Hi, ", font=('Segoe UI', 32))
         hi_label.pack(side=tk.LEFT)
         
-        # User Name in bold with a vibrant accent color
+        # User Name in bold
         name_label = tk.Label(container, text=username, font=('Segoe UI', 32, 'bold'), 
-                             fg='#00D4FF', bg='#121212')
+                             fg='#0078D7')
         name_label.pack(side=tk.LEFT)
         
         # Start timer for 3 seconds
@@ -347,46 +346,16 @@ class IRAttendanceApp:
         available_themes = style.theme_names()
         if 'vista' in available_themes:
             style.theme_use('vista')
-        elif 'clam' in available_themes:
-            style.theme_use('clam')
-        
-        # Configure dark background colors globally
-        bg_color = '#121212'
-        fg_color = '#E0E0E0'
-        accent_color = '#00D4FF'
-        card_bg = '#1E1E1E'
-        
-        style.configure('.', background=bg_color, foreground=fg_color)
-        style.configure('TFrame', background=bg_color)
-        style.configure('TLabel', background=bg_color, foreground=fg_color)
-        style.configure('Title.TLabel', font=('Segoe UI', 28, 'bold'), foreground=accent_color, background=bg_color)
-        style.configure('Subtitle.TLabel', font=('Segoe UI', 12), foreground='#AAAAAA', background=bg_color)
-        
-        # Configure input fields to have black text on white background (avoid white-on-white text)
-        style.configure('TEntry', foreground='#000000', fieldbackground='#ffffff', insertcolor='#000000')
-        style.configure('TCombobox', foreground='#000000', fieldbackground='#ffffff', insertcolor='#000000')
-        style.configure('TSpinbox', foreground='#000000', fieldbackground='#ffffff', insertcolor='#000000')
-        
-        # Buttons style
-        style.configure('TButton', font=('Segoe UI', 11, 'bold'), background=card_bg, foreground=fg_color)
-        style.map('TButton',
-                  background=[('active', accent_color), ('disabled', '#333333')],
-                  foreground=[('active', '#121212'), ('disabled', '#666666')])
-                  
-        style.configure('Accent.TButton', font=('Segoe UI', 11, 'bold'), background=accent_color, foreground='#121212')
-        
-        style.configure('TLabelframe', background=bg_color, bordercolor='#333333')
-        style.configure('TLabelframe.Label', background=bg_color, foreground=accent_color, font=('Segoe UI', 11, 'bold'))
-        
+
         # Fix Treeview tag colors
         style.configure("Treeview", 
-                        background=card_bg,
-                        foreground=fg_color,
-                        fieldbackground=card_bg,
+                        background="white",
+                        foreground="black",
+                        fieldbackground="white",
                         font=('Segoe UI', 10))
         style.map("Treeview", 
-                  foreground=[('selected', '#121212')],
-                  background=[('selected', accent_color)])
+                  foreground=[('selected', '#ffffff')],
+                  background=[('selected', '#0078D7')])
     
     def create_menu(self):
         """Create the main menu screen"""
