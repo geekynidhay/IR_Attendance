@@ -28,9 +28,9 @@ if '%errorlevel%' NEQ '0' (
     CD /D "%~dp0"
 :--------------------------------------
 
-echo Adding Firewall Rule for IR Attendance Mirroring (Port 5000)...
+echo Adding Firewall Rule for IR Attendance Mirroring (Port 5005)...
 netsh advfirewall firewall delete rule name="IR Attendance Mirror"
-netsh advfirewall firewall add rule name="IR Attendance Mirror" dir=in action=allow protocol=TCP localport=5000
+netsh advfirewall firewall add rule name="IR Attendance Mirror" dir=in action=allow protocol=TCP localport=5005
 echo.
 echo Rule added successfully! Phone should now connect over Wi-Fi/LAN.
 echo IP to use is likely starting with 192.168.1.X
