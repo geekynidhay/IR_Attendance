@@ -55,6 +55,9 @@ function MirrorScreen({ ip, setIp }) {
   const [focusMode, setFocusMode] = useState(false);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
   
+  const ipRef = useRef(ip);
+  useEffect(() => { ipRef.current = ip; }, [ip]);
+
   const interval = useRef(null);
   const lastId = useRef(-1);
   const [targetPoint, setTargetPoint] = useState(null);
