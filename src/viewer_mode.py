@@ -2829,9 +2829,7 @@ class ViewerMode:
         """Dismiss the PID XML error dialog by pressing enter and alt-tabbing back to IR Attendance"""
         import time
         import keyboard
-import platform
-ALT_KEY = 'command' if platform.system() == 'Darwin' else 'alt'
-        
+        import platform
         print("[Macro] Dismissing PID XML error dialog (pressing enter)...")
         keyboard.send('enter')
         time.sleep(0.3)
