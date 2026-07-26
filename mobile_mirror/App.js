@@ -206,7 +206,7 @@ function MirrorScreen({ ip, setIp }) {
             setError(null);
           }
         }
-      } catch (e) { if (e.name !== 'AbortError') setError('Network error'); }
+      } catch (e) { if (e.name === 'AbortError') { setError('Timeout! PC Firewall block?'); } else { setError('Network error'); } }
     }, 500);
   }, []);
 
