@@ -195,7 +195,7 @@ function MirrorScreen({ ip, setIp }) {
       try {
         const c = new AbortController();
         const t = setTimeout(() => c.abort(), 2000);
-        const r = await fetch(`http://${clean}:5005/status`, { signal: c.signal });
+        const r = await fetch(`http://${clean}:5005/status?t=${Date.now()}`, { signal: c.signal });
         clearTimeout(t);
         if (r.ok) {
           const d = await r.json();
