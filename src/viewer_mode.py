@@ -991,12 +991,16 @@ class ViewerMode:
 
     def _tree_navigate_up(self, event):
         """Intercept Treeview Up key — use our index-based navigator to avoid skipping folders."""
-        self.navigator.navigate_up()
+        import platform
+        if not (platform.system() == 'Windows' and getattr(self, 'is_auto', False)):
+            self.navigator.navigate_up()
         return 'break'
 
     def _tree_navigate_down(self, event):
         """Intercept Treeview Down key — use our index-based navigator to avoid skipping folders."""
-        self.navigator.navigate_down()
+        import platform
+        if not (platform.system() == 'Windows' and getattr(self, 'is_auto', False)):
+            self.navigator.navigate_down()
         return 'break'
     
     def increase_brightness(self):
@@ -1906,6 +1910,10 @@ class ViewerMode:
 
     def block_tree_nav(self, event, direction):
         """Handle tree navigation to prevent default behavior"""
+        import platform
+        if platform.system() == 'Windows' and getattr(self, 'is_auto', False):
+            return 'break'
+            
         if direction == 'left':
             self.navigate_left(event)
         else:
