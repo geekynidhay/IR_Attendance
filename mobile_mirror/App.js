@@ -111,7 +111,7 @@ function MirrorScreen({ ip, setIp }) {
     if (!connected) return;
     const fetchPupil = async () => {
       try {
-        const clean = ip.replace(/^https?:\/\//, '').split(':')[0];
+        const clean = ipRef.current.replace(/^https?:\/\//, '').split(':')[0];
         const res = await fetch(`http://${clean}:5005/darkest_point`);
         if (res.ok) {
           const data = await res.json();
@@ -191,7 +191,7 @@ function MirrorScreen({ ip, setIp }) {
   const start = useCallback(() => {
     stop();
     interval.current = setInterval(async () => {
-      const clean = ip.replace(/^https?:\/\//, '').split(':')[0];
+      const clean = ipRef.current.replace(/^https?:\/\//, '').split(':')[0];
       try {
         const c = new AbortController();
         const t = setTimeout(() => c.abort(), 2000);
@@ -208,7 +208,7 @@ function MirrorScreen({ ip, setIp }) {
         }
       } catch (e) { if (e.name !== 'AbortError') setError('Network error'); }
     }, 500);
-  }, [ip]);
+  }, []);
 
   const toggle = useCallback(() => {
     Keyboard.dismiss();
