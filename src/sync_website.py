@@ -445,7 +445,10 @@ def run_sync(log_cb=print):
             return True
             
         subprocess.run(["git", "commit", "-m", "chore: Auto-sync website releases"], check=True)
-        subprocess.run(["git", "push"], check=True)
+        log_cb("Pulling latest changes from GitHub...")
+        subprocess.run(["git", "pull", "--rebase", "origin", "main"], check=True)
+        log_cb("Pushing to GitHub...")
+        subprocess.run(["git", "push", "origin", "main"], check=True)
         log_cb("Website successfully updated and pushed!")
     except Exception as e:
         log_cb(f"Git push failed: {e}. You may need to commit and push manually.")
