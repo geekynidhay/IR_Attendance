@@ -9,7 +9,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: mobile_admin
+        working-directory: mobile_mirror
 
     steps:
       - name: Checkout Code
@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'mobile_admin/package-lock.json'
+          cache-dependency-path: 'mobile_mirror/package-lock.json'
 
       - name: Setup Java JDK
         uses: actions/setup-java@v4
@@ -30,6 +30,9 @@ jobs:
 
       - name: Install Node Dependencies
         run: npm install
+        
+      - name: Generate Android Project (Expo Prebuild)
+        run: npx expo prebuild --platform android --clean
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
@@ -41,4 +44,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: IR_Attendance_Android_App
-          path: mobile_admin/android/app/build/outputs/apk/release/app-release.apk
+          path: mobile_mirror/android/app/build/outputs/apk/release/app-release.apk
