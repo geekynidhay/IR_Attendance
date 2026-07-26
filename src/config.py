@@ -10,7 +10,8 @@ def get_data_dir():
     if sys.platform == "win32":
         return Path("C:/IR Attendance")
     else:
-        return Path.home() / "Desktop" / "IRIS Data"
+        # Mac ke liye local folder mein IRIS Data point karein
+        return Path(__file__).resolve().parent.parent / "IRIS Data"
 
 DATA_DIR = get_data_dir()
 

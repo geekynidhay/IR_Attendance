@@ -123,7 +123,8 @@ def get_image():
 
 def _find_pupil_center(gray):
     """
-    Robust pupil detection using Hough Circles (primary) + contour fallback.
+    Robust pupil detection using Hough Circles + Contour fallback.
+    Finds the darkest point STRICTLY INSIDE the detected circle/contour to avoid eyelashes.
     Returns (x, y, confidence, method_name).
     """
     import cv2
@@ -132,16 +133,14 @@ def _find_pupil_center(gray):
     height, width = gray.shape
 
     # ── Stage 1: Preprocessing ─────────────────────────────────────────────
-    # Bilateral filter preserves the pupil boundary while smoothing eyelash noise
     filtered = cv2.bilateralFilter(gray, 9, 75, 75)
     blurred = cv2.GaussianBlur(filtered, (9, 9), 2)
 
-    best_x, best_y = width // 2, height // 2   # ultimate fallback: image center
+    best_x, best_y = width // 2, height // 2
     best_score = -1
     method = "center_fallback"
 
     # ── Stage 2: Hough Circle Detection (primary) ──────────────────────────
-    # The pupil is a circle — Hough is the right tool for this.
     min_radius = max(int(min(width, height) * 0.04), 8)
     max_radius = int(min(width, height) * 0.25)
 
@@ -161,7 +160,6 @@ def _find_pupil_center(gray):
         for c in circles[0, :]:
             cx, cy, r = int(c[0]), int(c[1]), int(c[2])
 
-            # Reject circles whose CENTER is in the outer 12% margin
             mx = int(width * 0.12)
             my = int(height * 0.12)
             if cx < mx or cx > width - mx or cy < my or cy > height - my:
@@ -174,46 +172,43 @@ def _find_pupil_center(gray):
             darkness = 255 - mean_val
 
             # Mild spatial preference toward image center
-            dist = np.sqrt(((cx - width / 2) / width) ** 2 +
-                           ((cy - height / 2) / height) ** 2)
+            dist = np.sqrt(((cx - width / 2) / width) ** 2 + ((cy - height / 2) / height) ** 2)
             spatial_w = 1.0 - dist * 0.4
 
             score = darkness * spatial_w
             if score > best_score:
                 best_score = score
+                # Geometric center of the circle is the most stable point.
                 best_x, best_y = cx, cy
-                method = "hough"
+                method = "hough_geometric"
 
     # ── Stage 3: Contour-based fallback ────────────────────────────────────
-    # Only used if Hough didn't find a convincing dark circle
     if best_score < 60:
         heavy = cv2.medianBlur(gray, 7)
         heavy = cv2.GaussianBlur(heavy, (11, 11), 0)
 
-        min_val = int(np.min(heavy))
+        min_val_global = int(np.min(heavy))
         p10 = int(np.percentile(heavy, 10))
-        tv = max(int(min_val + (p10 - min_val) * 0.4), 5)
+        tv = max(int(min_val_global + (p10 - min_val_global) * 0.4), 5)
         _, thresh = cv2.threshold(heavy, tv, 255, cv2.THRESH_BINARY_INV)
 
-        # Larger kernel to merge eyelash fragments, then open to remove specs
         kern = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
         thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kern)
         thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kern)
 
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL,
-                                       cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         c_best = -1
         for cnt in contours:
             area = cv2.contourArea(cnt)
             if area < 500 or area > (width * height * 0.3):
-                continue                                   # too small / too large
+                continue
 
             perim = cv2.arcLength(cnt, True)
             if perim == 0:
                 continue
             circ = 4 * np.pi * area / (perim ** 2)
             if circ < 0.45:
-                continue                                   # eyelashes are elongated
+                continue
 
             M = cv2.moments(cnt)
             if M["m00"] == 0:
@@ -221,26 +216,35 @@ def _find_pupil_center(gray):
             cx = int(M["m10"] / M["m00"])
             cy = int(M["m01"] / M["m00"])
 
-            # Reject if center is near image edge
             mx = int(width * 0.12)
             my = int(height * 0.12)
             if cx < mx or cx > width - mx or cy < my or cy > height - my:
                 continue
 
             mask = np.zeros(gray.shape, dtype=np.uint8)
+            # Draw slightly eroded contour mask
             cv2.drawContours(mask, [cnt], -1, 255, -1)
-            darkness = 255 - cv2.mean(heavy, mask=mask)[0]
+            mask = cv2.erode(mask, np.ones((5,5), np.uint8), iterations=1)
 
-            dist = np.sqrt(((cx - width / 2) / width) ** 2 +
-                           ((cy - height / 2) / height) ** 2)
+            # Find darkest point inside contour
+            min_val, _, min_loc, _ = cv2.minMaxLoc(heavy, mask=mask)
+            darkest_x, darkest_y = min_loc
+            
+            # Use original mask for mean darkness calculation
+            full_mask = np.zeros(gray.shape, dtype=np.uint8)
+            cv2.drawContours(full_mask, [cnt], -1, 255, -1)
+            darkness = 255 - cv2.mean(heavy, mask=full_mask)[0]
+
+            dist = np.sqrt(((cx - width / 2) / width) ** 2 + ((cy - height / 2) / height) ** 2)
             spatial_w = 1.0 - dist * 0.3
 
             score = (circ ** 2) * darkness * spatial_w
             if score > c_best:
                 c_best = score
-                best_x, best_y = cx, cy
+                # Use darkest point inside contour
+                best_x, best_y = darkest_x, darkest_y
                 best_score = c_best
-                method = "contour"
+                method = "contour_darkest_inner"
 
     # ── Stage 4: Final sanity check ────────────────────────────────────────
     mx = int(width * 0.12)
@@ -436,6 +440,14 @@ def start_server():
         
         ip_list = get_local_ip()
         print(f"Server started on http://{ip_list[0]}:5005")
+        
+        # Publish IP to Firebase for Auto-Discovery by Mobile App
+        try:
+            import requests
+            requests.put("https://attendance-68878-default-rtdb.asia-southeast1.firebasedatabase.app/active_pc_ip.json", json={"ip": ip_list[0]}, timeout=5)
+            print(f"Published active PC IP {ip_list[0]} to Firebase for auto-discovery.")
+        except Exception as e:
+            print(f"Failed to publish IP to Firebase: {e}")
         return ip_list
     return get_local_ip()
 
@@ -450,3 +462,8 @@ def type_on_mobile(id_string, wait_timeout=15):
         _pending_mobile_id = str(id_string).strip()
         _mobile_ack_event.clear()
     return _mobile_ack_event.wait(timeout=wait_timeout)
+
+def trigger_mobile_focus():
+    global _trigger_focus
+    with _mobile_lock:
+        _trigger_focus = True

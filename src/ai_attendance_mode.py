@@ -393,13 +393,22 @@ class AIAttendanceMode:
         self.parent.bind('<Key-M>',          self._toggle_mark)
         self.parent.bind('<Key-n>',          self._toggle_not_working)
         self.parent.bind('<Key-N>',          self._toggle_not_working)
-        # REMOVED Key-a binding to prevent double-trigger with global hotkey
+        # Re-add Key-a binding for Mac because global hotkey fails
+        import platform
+        if platform.system() == 'Darwin':
+            self.parent.bind('<Key-a>',          self._toggle_auto_attendance)
+            self.parent.bind('<Key-A>',          self._toggle_auto_attendance)
+        
         self.folder_tree.bind('<Key-m>',     self._toggle_mark)
         self.folder_tree.bind('<Key-M>',     self._toggle_mark)
         self.folder_tree.bind('<Key-b>',     self._prompt_brightness)
         self.folder_tree.bind('<Key-B>',     self._prompt_brightness)
         self.folder_tree.bind('<Key-n>',     self._toggle_not_working)
         self.folder_tree.bind('<Key-N>',     self._toggle_not_working)
+        
+        if platform.system() == 'Darwin':
+            self.folder_tree.bind('<Key-a>', self._toggle_auto_attendance)
+            self.folder_tree.bind('<Key-A>', self._toggle_auto_attendance)
         if hasattr(self, 'image_canvas'):
             self.image_canvas.bind('<Key-m>', self._toggle_mark)
             self.image_canvas.bind('<Key-M>', self._toggle_mark)
@@ -407,7 +416,10 @@ class AIAttendanceMode:
             self.image_canvas.bind('<Key-B>', self._prompt_brightness)
             self.image_canvas.bind('<Key-n>', self._toggle_not_working)
             self.image_canvas.bind('<Key-N>', self._toggle_not_working)
-
+            
+            if platform.system() == 'Darwin':
+                self.image_canvas.bind('<Key-a>', self._toggle_auto_attendance)
+                self.image_canvas.bind('<Key-A>', self._toggle_auto_attendance)
     def _unbind_keys(self):
         for seq in ('<Return>', '<Key-b>', '<Key-B>', '<Key-m>', '<Key-M>', '<Key-n>', '<Key-N>', '<Key-a>', '<Key-A>'):
             try:

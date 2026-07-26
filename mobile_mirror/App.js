@@ -1,153 +1,192 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { StyleSheet, View, Image, StatusBar, TouchableOpacity, Modal } from 'react-native';
-import { Provider as PaperProvider, TextInput, Button, Text, MD3DarkTheme } from 'react-native-paper';
+import { StyleSheet, View, Image, StatusBar, TouchableOpacity, Text, TextInput, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { Provider as PaperProvider, MD3DarkTheme } from 'react-native-paper';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { ReactNativeZoomableView } from '@dudigital/react-native-zoomable-view';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const theme = {
-  ...MD3DarkTheme,
-  colors: { ...MD3DarkTheme.colors, primary: '#00BCD4', background: '#0A0A0A', surface: '#111122' },
-};
+const theme = { ...MD3DarkTheme, colors: { ...MD3DarkTheme.colors, primary: '#00BCD4', background: '#0A0A0A' } };
 
-// ─── Header ──────────────────────────────────────────────────────────────────
-function IPHeader({ ip, setIp, connected, onToggle, focusMode, setFocusMode, onDebug }) {
+// --- Header Component ---
+const IPHeader = ({ ip, setIp, connected, onToggle, focusMode, setFocusMode, autoDiscover }) => {
   return (
     <View style={s.header}>
-      <TextInput label="PC IP" value={ip} onChangeText={setIp}
-        mode="outlined" style={s.ipInput} disabled={connected} dense
-        keyboardType="numeric" textColor="#fff"
-        outlineColor="#333" activeOutlineColor="#00BCD4"
-        autoCorrect={false} blurOnSubmit={false} />
-      <Button mode="contained" onPress={() => setFocusMode(!focusMode)}
-        buttonColor={focusMode ? '#4CAF50' : '#444'}
-        style={[s.connectBtn, { marginRight: 6 }]}
-        labelStyle={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}>
-        {focusMode ? '🎯 ON' : '🎯 OFF'}
-      </Button>
-      <Button mode="contained" onPress={onDebug} buttonColor="#FF9800"
-        style={[s.connectBtn, { marginRight: 6 }]}
-        labelStyle={{ color: '#000', fontSize: 10, fontWeight: 'bold' }}>
-        DBG
-      </Button>
-      <Button mode="contained" onPress={onToggle}
-        buttonColor={connected ? '#CF6679' : '#00BCD4'}
-        style={s.connectBtn} labelStyle={{ color: '#000', fontWeight: 'bold' }}>
-        {connected ? 'STOP' : 'CONNECT'}
-      </Button>
+      <View style={s.ipInputContainer}>
+        <TextInput
+          style={s.ipInputText}
+          value={ip}
+          onChangeText={setIp}
+          placeholder="192.168.1.X"
+          placeholderTextColor="#888"
+          keyboardType="numeric"
+        />
+      </View>
+      <View style={s.controlsRow}>
+        <TouchableOpacity 
+          style={s.smallBtn}
+          onPress={autoDiscover}
+        >
+          <Text style={s.smallBtnText}>A</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[s.smallBtn, focusMode ? s.smallBtnActive : null]}
+          onPress={() => setFocusMode(!focusMode)}
+        >
+          <Text style={s.smallBtnText}>{focusMode ? 'X' : 'F'}</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[s.smallBtn, connected ? s.smallBtnStop : s.smallBtnStart]}
+          onPress={onToggle}
+        >
+          <Text style={s.smallBtnText}>{connected ? '■' : '▶'}</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
-}
+};
 
-// ─── Mirror Screen ────────────────────────────────────────────────────────────
+// --- Main Mirror Screen ---
 function MirrorScreen({ ip, setIp }) {
-  const [connected,   setConnected]  = useState(false);
-  const [imgUrl,      setImgUrl]     = useState(null);
-  const [error,       setError]      = useState(null);
-  const [focusMode,   setFocusMode]  = useState(false);
-  const [translate,   setTranslate]  = useState({ x: 0, y: 0 });
-  const [showDebug,   setShowDebug]  = useState(false);
-  const [debugImgUrl, setDebugImgUrl] = useState(null);
-
-  const interval        = useRef(null);
-  const lastId          = useRef(-1);
+  const [connected, setConnected] = useState(false);
+  const [imgUrl, setImgUrl] = useState(null);
+  const [error, setError] = useState(null);
+  const [focusMode, setFocusMode] = useState(false);
+  const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  
+  const interval = useRef(null);
+  const lastId = useRef(-1);
   const [targetPoint, setTargetPoint] = useState(null);
-  const [debugText, setDebugText] = useState('Waiting for tap...');
-  // Key fix: measure the TRUE rendered container INSIDE ZoomableView
+  const zoomStateRef = useRef({ zoomLevel: 1, offsetX: 0, offsetY: 0 });
+  const [pupilPoint, setPupilPoint] = useState(null);
+  const [minZoom, setMinZoom] = useState(0.01);
   const imgContainerRef = useRef({ width: 1, height: 1 });
 
-  // ─── IP persistence ─────────────────────────────────────────────────────────
   useEffect(() => {
-    AsyncStorage.getItem('savedIP').then(v => { if (v) setIp(v); }).catch(() => {});
+    AsyncStorage.getItem('savedIP').then(v => { 
+      if (v && v !== 'Scanning...') setIp(v); 
+      else autoDiscover();
+    }).catch(() => autoDiscover());
   }, []);
+
+
+  // --- Auto-Discovery Logic via Firebase ---
+  const autoDiscover = useCallback(async () => {
+    setIp('Scanning...');
+    setError(null);
+    stop();
+    setConnected(false);
+    
+    try {
+      const res = await fetch('https://attendance-68878-default-rtdb.asia-southeast1.firebasedatabase.app/active_pc_ip.json');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.ip) {
+          setIp(data.ip);
+          // Auto-start immediately after finding it
+          setTimeout(() => {
+            start();
+            setConnected(true);
+          }, 300);
+          return;
+        }
+      }
+      throw new Error('No IP found');
+    } catch (e) {
+      setIp('192.168.1.');
+      setError('Auto-discovery failed. Ensure PC app is running and has internet.');
+    }
+  }, [start, stop]);
+  
+  // Auto-scan on mount if no saved IP, or just provide a button
+
   const handleIpChange = useCallback((val) => {
     setIp(val);
     AsyncStorage.setItem('savedIP', val).catch(() => {});
-  }, [setIp]);
+  }, []);
 
-  // ─── Alignment ──────────────────────────────────────────────────────────────
-  const alignToTarget = useCallback(async (tapX, tapY) => {
+  // Sync pupil point from PC
+  useEffect(() => {
+    if (!connected) return;
+    const fetchPupil = async () => {
+      try {
+        const clean = ip.replace(/^https?:\/\//, '').split(':')[0];
+        const res = await fetch(`http://${clean}:5005/darkest_point`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.x_pct !== undefined && data.y_pct !== undefined) {
+            setPupilPoint(data);
+          }
+        }
+      } catch (e) { /* ignore */ }
+    };
+    const tid = setInterval(fetchPupil, 1000);
+    return () => clearInterval(tid);
+  }, [connected, ip]);
+
+  const updateTranslation = useCallback(() => {
+    if (!targetPoint || !pupilPoint || !imgContainerRef.current) {
+      // Prevent infinite loop by not updating state if it's already 0
+      setTranslate(prev => (prev.x === 0 && prev.y === 0) ? prev : { x: 0, y: 0 });
+      return;
+    }
     try {
-      const clean = ip.replace(/^https?:\/\//, '').split(':')[0];
-      const r = await fetch(`http://${clean}:5005/darkest_point`);
-      if (!r.ok) {
-        setDebugText(`Fetch error: ${r.status}`);
-        return;
-      }
-      const d = await r.json();
-      if (!d.ok) {
-        setDebugText(`Server error: ${d.error}`);
-        return;
-      }
-
-      // Skip alignment if server reports low confidence (bad detection)
-      if (d.confidence !== undefined && d.confidence < 0.15) {
-        console.log('Skipping alignment: low confidence', d.confidence, d.method);
-        setTranslate({ x: 0, y: 0 });
-        setDebugText(`Skipped (Low Conf): ${d.confidence?.toFixed(2)} (${d.method})`);
-        return;
-      }
-
-      // Guard: skip if container layout hasn't been measured yet
-      const { width: cw, height: ch } = imgContainerRef.current;
-      if (cw < 10 || ch < 10) {
-        console.log('Skipping alignment: container not measured yet');
-        setDebugText(`Skipped (Size < 10): ${cw}x${ch}`);
-        return;
-      }
-
-      const imgAspect  = d.width / d.height;
+      const cw = imgContainerRef.current.width;
+      const ch = imgContainerRef.current.height;
+      if (cw === 0 || ch === 0) return;
+      
+      const imgAspect = pupilPoint.width / pupilPoint.height;
       const viewAspect = cw / ch;
       let displayWidth, displayHeight;
+      
       if (imgAspect > viewAspect) {
-        displayWidth  = cw;
+        displayWidth = cw;
         displayHeight = cw / imgAspect;
       } else {
         displayHeight = ch;
-        displayWidth  = ch * imgAspect;
+        displayWidth = ch * imgAspect;
       }
-      // Pixel location of the pupil in the untranslated view
-      const baseX = (cw - displayWidth)  / 2 + d.x_pct * displayWidth;
-      const baseY = (ch - displayHeight) / 2 + d.y_pct * displayHeight;
-
-      // Compute raw translation
-      let tx = tapX - baseX;
-      let ty = tapY - baseY;
-
-      // Clamp translation so image never shifts more than 40% off container
+      
+      const baseX = (cw - displayWidth) / 2 + pupilPoint.x_pct * displayWidth;
+      const baseY = (ch - displayHeight) / 2 + pupilPoint.y_pct * displayHeight;
+      
+      const { zoomLevel, offsetX, offsetY } = zoomStateRef.current;
+      let tx = (targetPoint.x - cw/2) / zoomLevel - baseX - offsetX + cw/2;
+      let ty = (targetPoint.y - ch/2) / zoomLevel - baseY - offsetY + ch/2;
+      
       const maxTx = cw * 0.4;
       const maxTy = ch * 0.4;
       tx = Math.max(-maxTx, Math.min(maxTx, tx));
       ty = Math.max(-maxTy, Math.min(maxTy, ty));
+      
+      setTranslate(prev => {
+        if (Math.abs(prev.x - tx) < 0.1 && Math.abs(prev.y - ty) < 0.1) return prev;
+        return { x: tx, y: ty };
+      });
+    } catch (e) { console.log('Align math error:', e); }
+  }, [targetPoint, pupilPoint]);
 
-      setTranslate({ x: tx, y: ty });
-      setDebugText(`Tap: (${tapX.toFixed(0)}, ${tapY.toFixed(0)}) | Size: ${cw.toFixed(0)}x${ch.toFixed(0)} | Pupil: ${baseX.toFixed(0)},${baseY.toFixed(0)} | Trans: ${tx.toFixed(0)},${ty.toFixed(0)} | Conf: ${d.confidence?.toFixed(2)} [${d.method}]`);
-    } catch (e) {
-      console.log('Align error:', e);
-      setDebugText(`Error: ${e.message}`);
-    }
-  }, [ip]);
-
-  // ─── Re-align when new image or targetPoint changes ──────────────────────────
   useEffect(() => {
-    if (imgUrl) {
-      if (targetPoint) {
-        alignToTarget(targetPoint.x, targetPoint.y);
-      } else {
-        setTranslate({ x: 0, y: 0 });
-      }
-    }
-  }, [imgUrl, targetPoint, alignToTarget]);
+    updateTranslation();
+  }, [updateTranslation]);
 
-  // ─── Focus tap handler ───────────────────────────────────────────────────────
+  const handleZoomOrShift = useCallback((e, gestureState, zoomEvent) => {
+    if (!zoomEvent) return;
+    zoomStateRef.current = {
+      zoomLevel: zoomEvent.zoomLevel,
+      offsetX: zoomEvent.offsetX,
+      offsetY: zoomEvent.offsetY,
+    };
+    updateTranslation();
+  }, [updateTranslation]);
+
   const handleFocusTap = useCallback((event) => {
     const { locationX, locationY } = event.nativeEvent;
     setTargetPoint({ x: locationX, y: locationY });
     setFocusMode(false);
   }, []);
 
-  // ─── Polling ────────────────────────────────────────────────────────────────
   const stop = () => { clearInterval(interval.current); interval.current = null; };
   const start = useCallback(() => {
     stop();
@@ -160,6 +199,7 @@ function MirrorScreen({ ip, setIp }) {
         clearTimeout(t);
         if (r.ok) {
           const d = await r.json();
+          if (d.focus) setFocusMode(true);
           if (d.image_id !== lastId.current) {
             lastId.current = d.image_id;
             setImgUrl(`http://${clean}:5005/image?t=${Date.now()}`);
@@ -171,100 +211,52 @@ function MirrorScreen({ ip, setIp }) {
   }, [ip]);
 
   const toggle = useCallback(() => {
+    Keyboard.dismiss();
     if (connected) {
-      stop(); setConnected(false); setImgUrl(null); setError(null);
-      targetPoint.current = null; setTranslate({ x: 0, y: 0 });
-    } else { start(); setConnected(true); }
+      stop(); 
+      setConnected(false); 
+      setImgUrl(null); 
+      setError(null);
+      setTargetPoint(null); // FIXED TypeError: Cannot set property 'current' of null
+      setTranslate({ x: 0, y: 0 });
+    } else { 
+      start(); 
+      setConnected(true); 
+    }
   }, [connected, start]);
 
   useEffect(() => () => stop(), []);
 
-  const openDebug = useCallback(() => {
-    const clean = ip.replace(/^https?:\/\//, '').split(':')[0];
-    setDebugImgUrl(`http://${clean}:5005/debug_preview?t=${Date.now()}`);
-    setShowDebug(true);
-  }, [ip]);
-
-  // ─── Render ─────────────────────────────────────────────────────────────────
   return (
     <View style={s.screen}>
       <View style={{ zIndex: 10, elevation: 10 }}>
-        <IPHeader ip={ip} setIp={handleIpChange} connected={connected} onToggle={toggle}
-          focusMode={focusMode} setFocusMode={setFocusMode} onDebug={openDebug} />
+        <IPHeader 
+          ip={ip} 
+          setIp={handleIpChange} 
+          connected={connected} 
+          onToggle={toggle} 
+          focusMode={focusMode} 
+          setFocusMode={setFocusMode}
+          autoDiscover={autoDiscover} 
+        />
       </View>
       {error && <View style={s.errBanner}><Text style={s.errText}>{error}</Text></View>}
 
-      {/* Debug Modal */}
-      <Modal visible={showDebug} transparent animationType="slide" onRequestClose={() => setShowDebug(false)}>
-        <View style={s.modalBg}>
-          <View style={s.modalBox}>
-            <Text style={s.focusText}>🔍 Server Detection Preview</Text>
-            <Text style={{ color: '#888', fontSize: 11, marginBottom: 8 }}>
-              Red circle = detected pupil center.
-            </Text>
-            {debugImgUrl && (
-              <Image source={{ uri: debugImgUrl }} style={{ width: '100%', height: 280 }} resizeMode="contain" />
-            )}
-            <Button mode="contained" onPress={() => setShowDebug(false)}
-              buttonColor="#CF6679" style={{ marginTop: 12 }} labelStyle={{ color: '#000' }}>
-              CLOSE
-            </Button>
-          </View>
-        </View>
-      </Modal>
-
-      <View style={s.fill} onLayout={e => {
-        imgContainerRef.current = e.nativeEvent.layout;
-      }}>
+      <View style={s.fill} onLayout={e => { imgContainerRef.current = e.nativeEvent.layout; }}>
         {imgUrl ? (
           <>
-            {/* Translated image layer */}
-            <View style={[s.fill, {
-              overflow: 'hidden',
-              transform: [{ translateX: translate.x }, { translateY: translate.y }]
-            }]}>
-              <ReactNativeZoomableView maxZoom={100} minZoom={0.01} initialZoom={1}
-                bindToBorders={false} style={s.fill}>
-                <View style={s.fill}>
+            <View style={[s.fill, { overflow: 'hidden' }]}>
+              <ReactNativeZoomableView 
+                maxZoom={100} minZoom={minZoom} initialZoom={1} bindToBorders={false} style={s.fill}
+                onZoomAfter={handleZoomOrShift} onShiftingAfter={handleZoomOrShift}
+              >
+                <View style={[s.fill, { transform: [{ translateX: translate.x }, { translateY: translate.y }] }]}>
                   <Image source={{ uri: imgUrl }} style={s.fill} resizeMode="contain"
                     onError={e => setError(`Img: ${e.nativeEvent.error}`)} />
                 </View>
               </ReactNativeZoomableView>
             </View>
 
-            {/* Green marker at the tapped location */}
-            {targetPoint && (
-              <View pointerEvents="none" style={{
-                position: 'absolute',
-                left: targetPoint.x - 5,
-                top: targetPoint.y - 5,
-                width: 10,
-                height: 10,
-                borderRadius: 5,
-                backgroundColor: '#00ff00',
-                borderWidth: 1,
-                borderColor: '#000',
-                zIndex: 20
-              }} />
-            )}
-
-            {/* Debug overlay showing values */}
-            <View pointerEvents="none" style={{
-              position: 'absolute',
-              bottom: 10,
-              left: 10,
-              right: 10,
-              backgroundColor: 'rgba(0,0,0,0.8)',
-              padding: 8,
-              borderRadius: 6,
-              zIndex: 30
-            }}>
-              <Text style={{ color: '#fff', fontSize: 10, fontFamily: 'monospace' }}>
-                {debugText}
-              </Text>
-            </View>
-
-            {/* Focus overlay — conditionally rendered = ZERO interference when off */}
             {focusMode && (
               <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1}
                 onPress={handleFocusTap}>
@@ -278,7 +270,7 @@ function MirrorScreen({ ip, setIp }) {
         ) : (
           <View style={s.center}>
             <Text style={s.hint}>
-              {connected ? '⏳ Waiting for feed…' : '📡 Enter PC IP and tap CONNECT'}
+              {connected ? '⏳ Waiting for feed…' : '📡 Enter PC IP and tap START'}
             </Text>
           </View>
         )}
@@ -287,9 +279,8 @@ function MirrorScreen({ ip, setIp }) {
   );
 }
 
-// ─── Root ─────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [ip, setIp] = useState('192.168.1.7');
+  const [ip, setIp] = useState('192.168.1.3'); // PRE-FILLED WITH PC IP
   return (
     <SafeAreaProvider>
       <PaperProvider theme={theme}>
@@ -302,19 +293,53 @@ export default function App() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   root:   { flex: 1, backgroundColor: '#0A0A0A' },
   screen: { flex: 1, backgroundColor: '#0A0A0A' },
   fill:   { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   header: {
-    flexDirection: 'row', padding: 10,
+    flexDirection: 'row', padding: 8,
     backgroundColor: '#111122', alignItems: 'center',
     borderBottomWidth: 1, borderBottomColor: '#1E1E3F',
   },
-  ipInput:    { flex: 1, marginRight: 6, backgroundColor: '#16213E', height: 46 },
-  connectBtn: { height: 46, justifyContent: 'center' },
+  ipInputContainer: { 
+    flex: 1, 
+    marginRight: 8, 
+    backgroundColor: '#16213E', 
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    justifyContent: 'center',
+    height: 48,
+    borderWidth: 1,
+    borderColor: '#2A2A4A'
+  },
+  ipInputText: {
+    color: '#00BCD4',
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  controlsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  smallBtn: {
+    backgroundColor: '#2A2A4A',
+    paddingHorizontal: 8,
+    paddingVertical: 12,
+    borderRadius: 6,
+    marginLeft: 6,
+    minWidth: 35,
+    alignItems: 'center'
+  },
+  smallBtnActive: { backgroundColor: '#FF9800' },
+  smallBtnStart:  { backgroundColor: '#00695C' },
+  smallBtnStop:   { backgroundColor: '#B71C1C' },
+  smallBtnText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
   errBanner:  { backgroundColor: '#4A0000', padding: 6, alignItems: 'center' },
   errText:    { color: '#FF8A80', fontWeight: 'bold', fontSize: 12 },
   hint:       { color: '#445', fontSize: 15, textAlign: 'center' },
@@ -326,6 +351,4 @@ const s = StyleSheet.create({
   },
   focusText:    { color: '#00BCD4', fontWeight: 'bold', fontSize: 16 },
   focusSubText: { color: '#888', fontSize: 12, marginTop: 4 },
-  modalBg:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', padding: 16 },
-  modalBox: { backgroundColor: '#111122', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#00BCD4' },
 });

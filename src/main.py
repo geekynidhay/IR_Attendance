@@ -3,6 +3,7 @@ IR Attendance - Main Application
 Entry point for the Image Splitter and Image Viewer application
 """
 import ctypes
+
 try:
     # Set process DPI awareness to Per Monitor v2 (2) or fallback to System (1)
     ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -249,6 +250,10 @@ class IRAttendanceApp:
         # Register global hotkey (Ctrl+Space) to bring window to focus
         self.window_manager.register_hotkey('ctrl+space')
         
+        # Bind F key for remote focus
+        self.root.bind_all('<f>', self._on_f_pressed)
+        self.root.bind_all('<F>', self._on_f_pressed)
+        
         # Current mode
         self.current_mode = None
         self.mirror_engine = None
@@ -296,6 +301,15 @@ class IRAttendanceApp:
                     print(f"[Main] Failed to import background service: {e}")
         except Exception as e:
             print(f"[Main] Failed to start background service: {e}")
+
+    def _on_f_pressed(self, event):
+        """Trigger mobile focus mode when F is pressed on PC"""
+        try:
+            import server
+            server.trigger_mobile_focus()
+            print("Triggered mobile focus from PC!")
+        except Exception as e:
+            pass
 
     def on_closing(self):
         """Cleanup resources and exit"""
@@ -399,6 +413,11 @@ class IRAttendanceApp:
                              bg='#1976D2', fg='white', width=25, pady=8)
         auto_btn.pack(pady=10)
         
+                # Import Batch Feature
+        tk.Button(button_frame, text="📥 Import Batch", 
+                   command=self.import_batch,
+                   font=('Arial', 12, 'bold'), bg='#8E24AA', fg='white', width=25, pady=8).pack(pady=10)
+                   
         admin_btn = tk.Button(button_frame, text="Admin Mode",
                              command=self.open_admin_modes,
                              font=('Arial', 12, 'bold'),
@@ -461,6 +480,43 @@ Hotkey: Ctrl+Space to bring window to focus from any application
         except Exception as e:
             print(f"Error updating drive button status: {e}")
     
+
+    def import_batch(self):
+        """Import a batch archive from IR Admin Utility"""
+        from tkinter import filedialog, messagebox
+        import threading
+        import sys
+        import os
+        
+        try:
+            from system_utils import SystemUtils
+        except ImportError:
+            sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+            from system_utils import SystemUtils
+            
+        filepath = filedialog.askopenfilename(
+            title="Select Batch Archive (Output from Admin Utility)",
+            filetypes=[
+                ("Archive files", "*.zip *.rar *.7z *.tar *.gz *.tgz *.bz2 *.xz"),
+                ("All files", "*.*")
+            ]
+        )
+        if not filepath:
+            return
+            
+        messagebox.showinfo("Importing", "Extracting batch... Please wait. You will be notified when complete.")
+        
+        def _extract():
+            try:
+                from config import DATA_DIR
+                dest_dir = str(DATA_DIR)
+                SystemUtils.extract_archive(filepath, dest_dir)
+                self.root.after(0, lambda: messagebox.showinfo("Success", "Batch successfully imported into your database!\nIt will now appear in your Mode dropdowns."))
+            except Exception as e:
+                self.root.after(0, lambda: messagebox.showerror("Error", f"Failed to import batch:\n{e}"))
+                
+        threading.Thread(target=_extract, daemon=True).start()
+
     def open_manual_menu(self):
         """Open Manual Mode selection screen"""
         self.menu_frame.pack_forget()

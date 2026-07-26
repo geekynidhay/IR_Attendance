@@ -11,6 +11,8 @@ from folder_navigator import FolderNavigator
 from image_controls import ImageControls, ImageDisplay
 import time
 import keyboard
+import platform
+ALT_KEY = 'command' if platform.system() == 'Darwin' else 'alt'
 import os
 import shutil
 import server  # Import the new server module
@@ -704,7 +706,7 @@ class ViewerMode:
             
         def _fetch_and_update():
             ended_batches = {}
-            if self.lm and self.lm.database_url and self.lm.activation_code:
+            if self.lm and getattr(self.lm, 'database_url', None) and getattr(self.lm, 'activation_code', None):
                 try:
                     import requests
                     url = f"{self.lm.database_url}/sessions/{self.lm.activation_code}/ended_batches.json"
@@ -1173,11 +1175,11 @@ class ViewerMode:
         try:
             if self.is_auto:
                 # 1. Switch to previous window (Alt+Tab)
-                keyboard.press('alt')
+                keyboard.press(ALT_KEY)
                 keyboard.press('tab')
                 time.sleep(0.05)
                 keyboard.release('tab')
-                keyboard.release('alt')
+                keyboard.release(ALT_KEY)
                 
                 # Wait for switch (User requested 0.5-0.6s)
                 time.sleep(0.6)
@@ -1187,11 +1189,11 @@ class ViewerMode:
                 time.sleep(0.2)
                 
                 # 4. Switch back to this window
-                keyboard.press('alt')
+                keyboard.press(ALT_KEY)
                 keyboard.press('tab')
                 time.sleep(0.05)
                 keyboard.release('tab')
-                keyboard.release('alt')
+                keyboard.release(ALT_KEY)
                 
                 time.sleep(0.5)
                 
@@ -1205,11 +1207,11 @@ class ViewerMode:
                     self.folder_tree.focus(selection[0])
             else:
                 # Manual Macro: Alt+Tab -> Type ID -> Alt+Tab back
-                keyboard.press('alt')
+                keyboard.press(ALT_KEY)
                 keyboard.press('tab')
                 time.sleep(0.05)
                 keyboard.release('tab')
-                keyboard.release('alt')
+                keyboard.release(ALT_KEY)
                 
                 time.sleep(0.6)
                 
@@ -1217,11 +1219,11 @@ class ViewerMode:
                 time.sleep(0.2)
                 
                 # Switch back
-                keyboard.press('alt')
+                keyboard.press(ALT_KEY)
                 keyboard.press('tab')
                 time.sleep(0.05)
                 keyboard.release('tab')
-                keyboard.release('alt')
+                keyboard.release(ALT_KEY)
                 
                 time.sleep(0.5)
                 
@@ -1707,6 +1709,24 @@ class ViewerMode:
             self.image_canvas.bind('<Key-n>', self.toggle_not_working)
             self.image_canvas.bind('<Key-N>', self.toggle_not_working)
 
+        if platform.system() == 'Darwin':
+            self.parent.bind('<Key-a>', self.toggle_auto_attendance)
+            self.parent.bind('<Key-A>', self.toggle_auto_attendance)
+            self.parent.bind('<Right>', lambda e: self.navigate_right())
+            self.parent.bind('<Left>', lambda e: self.navigate_left())
+            self.parent.bind('<Up>', lambda e: self.navigate_up())
+            self.parent.bind('<Down>', lambda e: self.navigate_down())
+            
+            self.folder_tree.bind('<Key-a>', self.toggle_auto_attendance)
+            self.folder_tree.bind('<Key-A>', self.toggle_auto_attendance)
+            
+            if hasattr(self, 'image_canvas'):
+                self.image_canvas.bind('<Key-a>', self.toggle_auto_attendance)
+                self.image_canvas.bind('<Key-A>', self.toggle_auto_attendance)
+                self.image_canvas.bind('<Right>', lambda e: self.navigate_right())
+                self.image_canvas.bind('<Left>', lambda e: self.navigate_left())
+
+
     def _unbind_keys(self):
         sequences = ('<Return>', '<Control-Return>', '<Key-b>', '<Key-B>', '<Key-m>', '<Key-M>', '<Key-n>', '<Key-N>', '<Key-a>', '<Key-A>')
         for seq in sequences:
@@ -2141,11 +2161,11 @@ class ViewerMode:
     def threaded_execute_macro(self, subfolder_name):
         try:
             # 1. Switch to previous window (Alt+Tab)
-            keyboard.press('alt')
+            keyboard.press(ALT_KEY)
             keyboard.press('tab')
             time.sleep(0.05)
             keyboard.release('tab')
-            keyboard.release('alt')
+            keyboard.release(ALT_KEY)
             
             # Wait for switch (User requested 0.5-0.6s)
             time.sleep(0.6)
@@ -2155,11 +2175,11 @@ class ViewerMode:
             time.sleep(0.2)
             
             # 4. Switch back to this window
-            keyboard.press('alt')
+            keyboard.press(ALT_KEY)
             keyboard.press('tab')
             time.sleep(0.05)
             keyboard.release('tab')
-            keyboard.release('alt')
+            keyboard.release(ALT_KEY)
             
             time.sleep(0.5)
             
@@ -2291,11 +2311,11 @@ class ViewerMode:
                         return
 
                     # 1. Switch to target window
-                    keyboard.press('alt')
+                    keyboard.press(ALT_KEY)
                     keyboard.press('tab')
                     time.sleep(0.05)
                     keyboard.release('tab')
-                    keyboard.release('alt')
+                    keyboard.release(ALT_KEY)
                     time.sleep(0.6)
 
                     # Always clear input field first to prevent double-typing or leftovers
@@ -2579,11 +2599,11 @@ class ViewerMode:
                         return
                         
                     # 1. Switch to previous window (Alt+Tab)
-                    keyboard.press('alt')
+                    keyboard.press(ALT_KEY)
                     keyboard.press('tab')
                     time.sleep(0.05)
                     keyboard.release('tab')
-                    keyboard.release('alt')
+                    keyboard.release(ALT_KEY)
                     
                     # Wait for switch
                     time.sleep(0.6)
@@ -2790,11 +2810,11 @@ class ViewerMode:
                     self.parent.after(0, self.toggle_mark_force_red)
                     
                 # Switch back to our window
-                keyboard.press('alt')
+                keyboard.press(ALT_KEY)
                 keyboard.press('tab')
                 time.sleep(0.05)
                 keyboard.release('tab')
-                keyboard.release('alt')
+                keyboard.release(ALT_KEY)
                 
                 time.sleep(0.2)  # Fast transition
                 
@@ -2809,17 +2829,19 @@ class ViewerMode:
         """Dismiss the PID XML error dialog by pressing enter and alt-tabbing back to IR Attendance"""
         import time
         import keyboard
+import platform
+ALT_KEY = 'command' if platform.system() == 'Darwin' else 'alt'
         
         print("[Macro] Dismissing PID XML error dialog (pressing enter)...")
         keyboard.send('enter')
         time.sleep(0.3)
         
         # Press Alt+Tab to switch back to IR Attendance
-        keyboard.press('alt')
+        keyboard.press(ALT_KEY)
         keyboard.press('tab')
         time.sleep(0.05)
         keyboard.release('tab')
-        keyboard.release('alt')
+        keyboard.release(ALT_KEY)
         time.sleep(0.4)
         
         # Ensure our window is properly focused using Win32
@@ -3070,11 +3092,11 @@ class ViewerMode:
     def _run_pc_tnc_calibration_flow(self, student_id):
         try:
             # 1. Switch to previous window (Alt+Tab)
-            keyboard.press('alt')
+            keyboard.press(ALT_KEY)
             keyboard.press('tab')
             time.sleep(0.05)
             keyboard.release('tab')
-            keyboard.release('alt')
+            keyboard.release(ALT_KEY)
             
             # Wait for switch
             time.sleep(0.8)
