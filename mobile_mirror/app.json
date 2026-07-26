@@ -25,6 +25,16 @@
       "package": "com.nidhay.irmirror",
       "usesCleartextTraffic": true
     },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
     "web": {
       "favicon": "./assets/favicon.png"
     },
