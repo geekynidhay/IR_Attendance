@@ -44,7 +44,8 @@ class Config:
             "crop_bottom": 100,
             "license_user": "",
             "global_default_brightness": "",
-            "subfolder_settings": {}  # Store brightness/zoom per subfolder
+            "subfolder_settings": {},  # Store brightness/zoom per subfolder
+            "image_popup_enabled": True
         }
         
         if self.config_file.exists():

@@ -1981,9 +1981,10 @@ class ViewerMode:
         self.auto_status_lbl.config(fg="green")
         self._hud_show()
         # Create and display the PIP window
-        if not hasattr(self, 'pip_window') or not self.pip_window:
-            self.create_pip_window()
-        self.update_pip_image()
+        if config.get("image_popup_enabled", True):
+            if not hasattr(self, 'pip_window') or not self.pip_window:
+                self.create_pip_window()
+            self.update_pip_image()
         self.run_auto_step()
 
     def stop_auto_attendance(self):
@@ -2044,6 +2045,8 @@ class ViewerMode:
 
     def update_pip_image(self):
         """Update the image in the PIP window, scaled to 60%"""
+        if not config.get("image_popup_enabled", True):
+            return
         if not hasattr(self, 'pip_window') or not self.pip_window or not self.is_auto_running:
             return
         try:

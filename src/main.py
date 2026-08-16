@@ -424,6 +424,12 @@ class IRAttendanceApp:
                              bg='#37474F', fg='white', width=25, pady=8)
         admin_btn.pack(pady=10)
         
+        settings_btn = tk.Button(button_frame, text="⚙ Settings",
+                             command=self.open_settings_menu,
+                             font=('Arial', 12, 'bold'),
+                             bg='#607D8B', fg='white', width=25, pady=8)
+        settings_btn.pack(pady=10)
+        
         # Info
         info_text = """
 JPG Splitter: Split images vertically with custom crop areas
@@ -440,6 +446,69 @@ Hotkey: Ctrl+Space to bring window to focus from any application
         self.footer = Footer(self.menu_frame)
         self.footer.pack(side=tk.BOTTOM, fill=tk.X)
     
+    def open_settings_menu(self):
+        """Open a Settings window to configure features like Image PopUp."""
+        settings_win = tk.Toplevel(self.root)
+        settings_win.title("Settings")
+        settings_win.geometry("400x250")
+        settings_win.resizable(False, False)
+        settings_win.attributes("-topmost", True)
+        
+        # Center the window
+        settings_win.update_idletasks()
+        x = (settings_win.winfo_screenwidth() // 2) - (400 // 2)
+        y = (settings_win.winfo_screenheight() // 2) - (250 // 2)
+        settings_win.geometry(f"+{x}+{y}")
+
+        ttk.Label(settings_win, text="Application Settings", font=('Arial', 16, 'bold')).pack(pady=15)
+        
+        # Toggle for Image PopUp
+        popup_frame = ttk.Frame(settings_win)
+        popup_frame.pack(fill=tk.X, padx=30, pady=10)
+        
+        ttk.Label(popup_frame, text="Image PopUp (Auto Mode):", font=('Arial', 12)).pack(side=tk.LEFT)
+        
+        # Variable and default load
+        from config import config as cfg_mod # Just to be safe if global is not ready
+        self.popup_var = tk.BooleanVar(value=config.get("image_popup_enabled", True))
+        
+        def toggle_popup(event=None):
+            current = self.popup_var.get()
+            self.popup_var.set(not current)
+            new_state = self.popup_var.get()
+            
+            color = "#4CAF50" if new_state else "#cccccc"
+            toggle_canvas.itemconfig(bg_id1, fill=color)
+            toggle_canvas.itemconfig(bg_id2, fill=color)
+            toggle_canvas.itemconfig(bg_id3, fill=color)
+            
+            new_x = 36 if new_state else 14
+            toggle_canvas.coords(knob_id, new_x - 10, 4, new_x + 10, 24)
+            
+            config.set("image_popup_enabled", new_state)
+            
+        toggle_canvas = tk.Canvas(popup_frame, width=50, height=28, highlightthickness=0)
+        toggle_canvas.pack(side=tk.RIGHT)
+        
+        # Draw track
+        initial_color = "#4CAF50" if self.popup_var.get() else "#cccccc"
+        bg_id1 = toggle_canvas.create_oval(2, 2, 26, 26, fill=initial_color, outline="")
+        bg_id2 = toggle_canvas.create_oval(24, 2, 48, 26, fill=initial_color, outline="")
+        bg_id3 = toggle_canvas.create_rectangle(14, 2, 36, 26, fill=initial_color, outline="")
+        
+        # Draw knob
+        knob_x = 36 if self.popup_var.get() else 14
+        knob_id = toggle_canvas.create_oval(knob_x - 10, 4, knob_x + 10, 24, fill="white", outline="")
+        
+        toggle_canvas.bind("<Button-1>", toggle_popup)
+        
+        ttk.Label(settings_win, text="Turn this ON to see PIP image popup when\nauto attendance starts. Turn OFF to hide.", 
+                  font=('Arial', 9), foreground='gray').pack(pady=5)
+                  
+        close_btn = tk.Button(settings_win, text="Close", command=settings_win.destroy,
+                              bg='#1976D2', fg='white', font=('Arial', 10, 'bold'), width=15)
+        close_btn.pack(pady=20)
+
     def upload_drive_key(self):
         from tkinter import filedialog, messagebox
         import sys
