@@ -398,6 +398,7 @@ class IRAttendanceApp:
         # Fetch live list of synced users from Firebase
         def _on_users_fetched(success, users_list):
             if success and users_list:
+                current_u = self.user_var.get()
                 if current_u and current_u not in users_list:
                     users_list.insert(0, current_u)
                 self.all_users = users_list
