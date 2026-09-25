@@ -282,6 +282,13 @@ class IRAttendanceApp:
         
         # Start background service listener
         self.start_background_service()
+        
+        # Check for software updates
+        try:
+            import update_checker
+            update_checker.UpdateChecker.check_for_updates(self.root)
+        except Exception as e:
+            print(f"Update check failed: {e}")
 
     def start_background_service(self):
         """Launches IR_Attendance_Service.py in the background if it's not already running."""
@@ -356,7 +363,100 @@ class IRAttendanceApp:
         
         # Title
         ttk.Label(center_frame, text="IR Attendance", 
-                 style='Title.TLabel').pack(pady=20)
+                 style='Title.TLabel').pack(pady=10)
+                 
+        import socket
+        hostname = socket.gethostname()
+        
+        # --- User Selection (Multi-User Sync UI) ---
+        user_frame = ttk.Frame(center_frame)
+        user_frame.pack(pady=10)
+        
+        # Clear indicator of which computer this is
+        info_label = ttk.Label(user_frame, text=f"💻 This Computer: {hostname}", font=('Arial', 12, 'bold'), foreground='#1976D2')
+        info_label.pack(side=tk.TOP, pady=(0, 10))
+        
+        dropdown_frame = ttk.Frame(user_frame)
+        dropdown_frame.pack(side=tk.TOP)
+        
+        ttk.Label(dropdown_frame, text="Active Profile:", font=('Arial', 12)).pack(side=tk.LEFT, padx=5)
+        
+        # Default to hostname if no user is set
+        saved_user = config.get("license_user")
+        if not saved_user:
+            saved_user = hostname
+            config.set("license_user", saved_user)
+            
+        self.user_var = tk.StringVar(value=saved_user)
+        self.user_combo = ttk.Combobox(dropdown_frame, textvariable=self.user_var, font=('Arial', 12, 'bold'), width=25)
+        self.user_combo.pack(side=tk.LEFT, padx=5)
+        
+        # Setup initial list with current user
+        self.all_users = [saved_user]
+        self.user_combo['values'] = self.all_users
+        
+        # Fetch live list of synced users from Firebase
+        def _on_users_fetched(success, users_list):
+            if success and users_list:
+                if current_u and current_u not in users_list:
+                    users_list.insert(0, current_u)
+                self.all_users = users_list
+                # Safely update UI from background thread
+                self.root.after(0, lambda: self.user_combo.config(values=self.all_users))
+                
+        try:
+            import sync_manager
+            sync_manager.SyncManager.get_all_users(_on_users_fetched)
+        except Exception:
+            pass
+        
+        def on_user_change(event=None):
+            selected = self.user_var.get()
+            if selected:
+                config.set("license_user", selected)
+                print(f"[Multi-User] User switched to: {selected}")
+                
+                # Fetch state from Firebase
+                def _on_pulled(success, state_data):
+                    if success and state_data:
+                        print(f"[Multi-User] Successfully pulled state for {selected}")
+                        # Update local config with pulled state
+                        config.settings["subfolder_settings"] = state_data.get("subfolder_settings", {})
+                        config.settings["success_folders"] = state_data.get("success_folders", [])
+                        config.settings["marked_folders"] = state_data.get("marked_folders", [])
+                        config.settings["not_working_folders"] = state_data.get("not_working_folders", [])
+                        
+                        # Save local config without triggering push back to firebase
+                        # We use standard json write to bypass the hook
+                        try:
+                            import json
+                            with open(config.config_file, 'w') as f:
+                                json.dump(config.settings, f, indent=4)
+                        except: pass
+                        
+                        # Show visual feedback
+                        self.user_combo.config(foreground='green')
+                        self.root.after(2000, lambda: self.user_combo.config(foreground='black'))
+                        
+                import sync_manager
+                sync_manager.SyncManager.pull_state(selected, _on_pulled)
+                
+        def filter_users(event):
+            # Ignore special keys like Up/Down/Return
+            if event.keysym in ('Up', 'Down', 'Return', 'Left', 'Right'):
+                return
+            typed = self.user_var.get().lower()
+            if typed == '':
+                self.user_combo['values'] = self.all_users
+            else:
+                filtered = [u for u in self.all_users if typed in u.lower()]
+                self.user_combo['values'] = filtered
+                # Optional: drop down the list while typing
+                # self.user_combo.event_generate('<Down>')
+                
+        self.user_combo.bind("<<ComboboxSelected>>", on_user_change)
+        self.user_combo.bind("<KeyRelease>", filter_users)
+        # -------------------------------------------
                  
         self.dashboard_frame = ttk.Frame(center_frame)
         self.dashboard_frame.pack(pady=10, fill=tk.X)

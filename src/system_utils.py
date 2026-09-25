@@ -132,3 +132,101 @@ class SystemUtils:
         else:
             # Fallback to shutil
             shutil.unpack_archive(str(archive_path), str(dest_dir))
+
+class DesktopBlackoutManager:
+    """Manages hiding desktop icons and changing wallpaper for OCR accuracy on Windows"""
+    _original_wallpaper = None
+    _is_blackout_active = False
+    _black_image_path = None
+
+    @staticmethod
+    def _toggle_desktop_icons():
+        import sys
+        if sys.platform != "win32":
+            return
+        import ctypes
+        
+        try:
+            hwnd = ctypes.windll.user32.FindWindowW("Progman", "Program Manager")
+            if hwnd:
+                ctypes.windll.user32.SendMessageTimeoutW(hwnd, 0x052C, 0, 0, 0, 1000, None)
+                hwnd_worker = ctypes.windll.user32.FindWindowExW(0, 0, "WorkerW", None)
+                while hwnd_worker:
+                    defview = ctypes.windll.user32.FindWindowExW(hwnd_worker, 0, "SHELLDLL_DefView", None)
+                    if defview:
+                        # 0x7402 is the toggle command
+                        ctypes.windll.user32.SendMessageW(defview, 0x0111, 0x7402, 0)
+                        break
+                    hwnd_worker = ctypes.windll.user32.FindWindowExW(0, hwnd_worker, "WorkerW", None)
+        except Exception as e:
+            print(f"Failed to toggle icons: {e}")
+
+    @staticmethod
+    def enable_blackout():
+        import sys
+        if sys.platform != "win32":
+            return
+            
+        if DesktopBlackoutManager._is_blackout_active:
+            return
+            
+        try:
+            import ctypes
+            import winreg
+            import tempfile
+            import os
+            
+            # Save current wallpaper path from registry
+            try:
+                with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Control Panel\Desktop") as key:
+                    DesktopBlackoutManager._original_wallpaper, _ = winreg.QueryValueEx(key, "Wallpaper")
+            except Exception:
+                DesktopBlackoutManager._original_wallpaper = ""
+                
+            # Create a solid black image
+            try:
+                from PIL import Image
+                DesktopBlackoutManager._black_image_path = os.path.join(tempfile.gettempdir(), "ir_black_bg.bmp")
+                img = Image.new('RGB', (1, 1), color='black')
+                img.save(DesktopBlackoutManager._black_image_path)
+            except Exception:
+                DesktopBlackoutManager._black_image_path = ""
+                
+            # Set to black wallpaper
+            SPI_SETDESKWALLPAPER = 20
+            SPIF_UPDATEINIFILE = 1
+            SPIF_SENDWININICHANGE = 2
+            ctypes.windll.user32.SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, DesktopBlackoutManager._black_image_path, SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE)
+            
+            # Hide icons
+            DesktopBlackoutManager._toggle_desktop_icons()
+            
+            DesktopBlackoutManager._is_blackout_active = True
+        except Exception as e:
+            print(f"Blackout enable failed: {e}")
+
+    @staticmethod
+    def disable_blackout():
+        import sys
+        if sys.platform != "win32":
+            return
+            
+        if not DesktopBlackoutManager._is_blackout_active:
+            return
+            
+        try:
+            import ctypes
+            
+            # Restore original wallpaper
+            if DesktopBlackoutManager._original_wallpaper is not None:
+                SPI_SETDESKWALLPAPER = 20
+                SPIF_UPDATEINIFILE = 1
+                SPIF_SENDWININICHANGE = 2
+                ctypes.windll.user32.SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, DesktopBlackoutManager._original_wallpaper, SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE)
+                
+            # Show icons again
+            DesktopBlackoutManager._toggle_desktop_icons()
+            
+            DesktopBlackoutManager._is_blackout_active = False
+        except Exception as e:
+            print(f"Blackout disable failed: {e}")

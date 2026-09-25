@@ -1073,6 +1073,12 @@ class AIAttendanceMode:
 
     def show(self):
         self.frame.pack(fill=tk.BOTH, expand=True)
+        try:
+            import system_utils
+            system_utils.DesktopBlackoutManager.enable_blackout()
+        except Exception as e:
+            print(f"Blackout hook failed: {e}")
+            
         self.refresh_batch_list(force_load=True)
         self._bind_keys()
         self.parent.focus_set()
@@ -1086,6 +1092,11 @@ class AIAttendanceMode:
         self._unbind_keys()
         self.apply_layout_theme(False)
         self.frame.pack_forget()
+        try:
+            import system_utils
+            system_utils.DesktopBlackoutManager.disable_blackout()
+        except Exception as e:
+            print(f"Blackout hook failed: {e}")
         # Remove global hotkey
         try:
             keyboard.remove_hotkey('a')

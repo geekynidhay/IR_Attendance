@@ -25,7 +25,8 @@ class Config:
         self.base_path = DATA_DIR
             
         self.base_path.mkdir(parents=True, exist_ok=True)
-        self.config_file = self.base_path / "config.json"
+        config_name = os.environ.get("IR_CONFIG_NAME", "config.json")
+        self.config_file = self.base_path / config_name
         
         self.settings = self.load_config()
     
@@ -59,10 +60,20 @@ class Config:
         return default_config
     
     def save_config(self):
-        """Save configuration to JSON file"""
+        """Save configuration to JSON file and push to cloud"""
         try:
             with open(self.config_file, 'w') as f:
                 json.dump(self.settings, f, indent=4)
+                
+            # --- Firebase Sync Hook ---
+            user = self.settings.get("license_user")
+            if user:
+                try:
+                    import sync_manager
+                    sync_manager.SyncManager.push_state(user, self.settings)
+                except Exception as e:
+                    print(f"Failed to trigger sync: {e}")
+                    
         except Exception as e:
             print(f"Error saving config: {e}")
     

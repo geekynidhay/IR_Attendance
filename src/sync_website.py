@@ -430,6 +430,23 @@ def run_sync(log_cb=print):
         with open(DOCS_DIR / "index.html", "w", encoding="utf-8") as f:
             f.write(index_html)
         log_cb(" - Generated index.html")
+        
+        # --- Firebase Auto-Update Hook ---
+        try:
+            import requests
+            if win_data:
+                latest_v_str = list(win_data.keys())[0].upper().replace("V", "").strip()
+                dl_url = f"https://drive.google.com/uc?export=download&id={latest_win_id}" if latest_win_id else ""
+                
+                payload = {
+                    "version": latest_v_str,
+                    "download_url": dl_url
+                }
+                fb_url = "https://attendance-68878-default-rtdb.asia-southeast1.firebasedatabase.app/version_info.json"
+                requests.put(fb_url, json=payload, timeout=5)
+                log_cb(f" - Pushed version {latest_v_str} to Firebase for in-app updates")
+        except Exception as fb_e:
+            log_cb(f" - Failed to push version to Firebase: {fb_e}")
     else:
         log_cb(" - SKIPPED index.html (all fetches failed — preserving existing content)")
 
@@ -440,15 +457,22 @@ def run_sync(log_cb=print):
         
         # Check if there's anything to commit
         status = subprocess.run(["git", "status", "--porcelain", "docs/"], capture_output=True, text=True)
-        if not status.stdout.strip():
+        if status.stdout.strip():
+            subprocess.run(["git", "commit", "-m", "chore: Auto-sync website releases"], check=True)
+            
+        # Check if there are any unpushed commits
+        unpushed = subprocess.run(["git", "log", "origin/main..HEAD"], capture_output=True, text=True)
+        if not unpushed.stdout.strip():
             log_cb("No changes detected. Website is already up to date!")
             return True
-            
-        subprocess.run(["git", "commit", "-m", "chore: Auto-sync website releases"], check=True)
+
+        env = os.environ.copy()
+        env["GIT_TERMINAL_PROMPT"] = "0"
+        
         log_cb("Pulling latest changes from GitHub...")
-        subprocess.run(["git", "pull", "--rebase", "origin", "main"], check=True)
+        subprocess.run(["git", "pull", "--rebase", "--autostash", "origin", "main"], check=True, env=env)
         log_cb("Pushing to GitHub...")
-        subprocess.run(["git", "push", "origin", "main"], check=True)
+        subprocess.run(["git", "push", "origin", "main"], check=True, env=env)
         log_cb("Website successfully updated and pushed!")
     except Exception as e:
         log_cb(f"Git push failed: {e}. You may need to commit and push manually.")

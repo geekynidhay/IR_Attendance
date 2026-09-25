@@ -1584,6 +1584,14 @@ class ViewerMode:
     def show(self):
         """Show the viewer mode frame"""
         self.frame.pack(fill=tk.BOTH, expand=True)
+        
+        if getattr(self, 'is_auto', False):
+            try:
+                import system_utils
+                system_utils.DesktopBlackoutManager.enable_blackout()
+            except Exception as e:
+                print(f"Blackout hook failed: {e}")
+                
         self.check_success_folders_reset()
         self.refresh_batch_list(force_load=True)
         self._bind_keys()
@@ -1641,6 +1649,13 @@ class ViewerMode:
         self._unbind_keys()
         self.apply_layout_theme(False)
         self.frame.pack_forget()
+        
+        if getattr(self, 'is_auto', False):
+            try:
+                import system_utils
+                system_utils.DesktopBlackoutManager.disable_blackout()
+            except Exception as e:
+                print(f"Blackout hook failed: {e}")
         
         # Remove global hotkeys for Auto Mode
         if self.is_auto:
