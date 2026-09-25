@@ -550,64 +550,50 @@ Hotkey: Ctrl+Space to bring window to focus from any application
         """Open a Settings window to configure features like Image PopUp."""
         settings_win = tk.Toplevel(self.root)
         settings_win.title("Settings")
-        settings_win.geometry("400x250")
+        settings_win.geometry("420x350")
         settings_win.resizable(False, False)
         settings_win.attributes("-topmost", True)
         
         # Center the window
         settings_win.update_idletasks()
-        x = (settings_win.winfo_screenwidth() // 2) - (400 // 2)
-        y = (settings_win.winfo_screenheight() // 2) - (250 // 2)
+        x = (settings_win.winfo_screenwidth() // 2) - (420 // 2)
+        y = (settings_win.winfo_screenheight() // 2) - (350 // 2)
         settings_win.geometry(f"+{x}+{y}")
 
         ttk.Label(settings_win, text="Application Settings", font=('Arial', 16, 'bold')).pack(pady=15)
         
-        # Toggle for Image PopUp
+        from config import config as cfg_mod
+        
+        # --- Setting 1: Image PopUp ---
         popup_frame = ttk.Frame(settings_win)
-        popup_frame.pack(fill=tk.X, padx=30, pady=10)
-        
-        ttk.Label(popup_frame, text="Image PopUp (Auto Mode):", font=('Arial', 12)).pack(side=tk.LEFT)
-        
-        # Variable and default load
-        from config import config as cfg_mod # Just to be safe if global is not ready
+        popup_frame.pack(fill=tk.X, padx=30, pady=5)
+        ttk.Label(popup_frame, text="Image PopUp (Auto Mode):", font=('Arial', 11)).pack(side=tk.LEFT)
         self.popup_var = tk.BooleanVar(value=config.get("image_popup_enabled", True))
+        def _save_popup(): config.set("image_popup_enabled", self.popup_var.get())
+        ttk.Checkbutton(popup_frame, style="Switch.TCheckbutton", variable=self.popup_var, command=_save_popup).pack(side=tk.RIGHT)
         
-        def toggle_popup(event=None):
-            current = self.popup_var.get()
-            self.popup_var.set(not current)
-            new_state = self.popup_var.get()
-            
-            color = "#4CAF50" if new_state else "#cccccc"
-            toggle_canvas.itemconfig(bg_id1, fill=color)
-            toggle_canvas.itemconfig(bg_id2, fill=color)
-            toggle_canvas.itemconfig(bg_id3, fill=color)
-            
-            new_x = 36 if new_state else 14
-            toggle_canvas.coords(knob_id, new_x - 10, 4, new_x + 10, 24)
-            
-            config.set("image_popup_enabled", new_state)
-            
-        toggle_canvas = tk.Canvas(popup_frame, width=50, height=28, highlightthickness=0)
-        toggle_canvas.pack(side=tk.RIGHT)
+        # --- Setting 2: Hide Desktop Icons ---
+        icons_frame = ttk.Frame(settings_win)
+        icons_frame.pack(fill=tk.X, padx=30, pady=5)
+        ttk.Label(icons_frame, text="Hide Desktop Icons (Auto Mode):", font=('Arial', 11)).pack(side=tk.LEFT)
+        self.icons_var = tk.BooleanVar(value=config.get("hide_desktop_icons", True))
+        def _save_icons(): config.set("hide_desktop_icons", self.icons_var.get())
+        ttk.Checkbutton(icons_frame, style="Switch.TCheckbutton", variable=self.icons_var, command=_save_icons).pack(side=tk.RIGHT)
         
-        # Draw track
-        initial_color = "#4CAF50" if self.popup_var.get() else "#cccccc"
-        bg_id1 = toggle_canvas.create_oval(2, 2, 26, 26, fill=initial_color, outline="")
-        bg_id2 = toggle_canvas.create_oval(24, 2, 48, 26, fill=initial_color, outline="")
-        bg_id3 = toggle_canvas.create_rectangle(14, 2, 36, 26, fill=initial_color, outline="")
+        # --- Setting 3: Black Screen ---
+        black_frame = ttk.Frame(settings_win)
+        black_frame.pack(fill=tk.X, padx=30, pady=5)
+        ttk.Label(black_frame, text="Black Screen (Auto Mode):", font=('Arial', 11)).pack(side=tk.LEFT)
+        self.black_var = tk.BooleanVar(value=config.get("black_screen_enabled", True))
+        def _save_black(): config.set("black_screen_enabled", self.black_var.get())
+        ttk.Checkbutton(black_frame, style="Switch.TCheckbutton", variable=self.black_var, command=_save_black).pack(side=tk.RIGHT)
         
-        # Draw knob
-        knob_x = 36 if self.popup_var.get() else 14
-        knob_id = toggle_canvas.create_oval(knob_x - 10, 4, knob_x + 10, 24, fill="white", outline="")
-        
-        toggle_canvas.bind("<Button-1>", toggle_popup)
-        
-        ttk.Label(settings_win, text="Turn this ON to see PIP image popup when\nauto attendance starts. Turn OFF to hide.", 
-                  font=('Arial', 9), foreground='gray').pack(pady=5)
+        # Hint text
+        ttk.Label(settings_win, text="Toggle these features ON/OFF to customize your\nexperience during Automatic Mode.", 
+                  font=('Arial', 9), foreground='gray', justify=tk.CENTER).pack(pady=15)
                   
-        close_btn = tk.Button(settings_win, text="Close", command=settings_win.destroy,
-                              bg='#1976D2', fg='white', font=('Arial', 10, 'bold'), width=15)
-        close_btn.pack(pady=20)
+        close_btn = ttk.Button(settings_win, text="Close", command=settings_win.destroy, style='Accent.TButton')
+        close_btn.pack(pady=10)
 
     def upload_drive_key(self):
         from tkinter import filedialog, messagebox

@@ -175,31 +175,35 @@ class DesktopBlackoutManager:
             import winreg
             import tempfile
             import os
+            from config import config
             
-            # Save current wallpaper path from registry
-            try:
-                with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Control Panel\Desktop") as key:
-                    DesktopBlackoutManager._original_wallpaper, _ = winreg.QueryValueEx(key, "Wallpaper")
-            except Exception:
-                DesktopBlackoutManager._original_wallpaper = ""
-                
-            # Create a solid black image
-            try:
-                from PIL import Image
-                DesktopBlackoutManager._black_image_path = os.path.join(tempfile.gettempdir(), "ir_black_bg.bmp")
-                img = Image.new('RGB', (1, 1), color='black')
-                img.save(DesktopBlackoutManager._black_image_path)
-            except Exception:
-                DesktopBlackoutManager._black_image_path = ""
-                
-            # Set to black wallpaper
-            SPI_SETDESKWALLPAPER = 20
-            SPIF_UPDATEINIFILE = 1
-            SPIF_SENDWININICHANGE = 2
-            ctypes.windll.user32.SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, DesktopBlackoutManager._black_image_path, SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE)
+            # --- Make Wallpaper Black (if enabled) ---
+            if config.get("black_screen_enabled", True):
+                # Save current wallpaper path from registry
+                try:
+                    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Control Panel\Desktop") as key:
+                        DesktopBlackoutManager._original_wallpaper, _ = winreg.QueryValueEx(key, "Wallpaper")
+                except Exception:
+                    DesktopBlackoutManager._original_wallpaper = ""
+                    
+                # Create a solid black image
+                try:
+                    from PIL import Image
+                    DesktopBlackoutManager._black_image_path = os.path.join(tempfile.gettempdir(), "ir_black_bg.bmp")
+                    img = Image.new('RGB', (1, 1), color='black')
+                    img.save(DesktopBlackoutManager._black_image_path)
+                except Exception:
+                    DesktopBlackoutManager._black_image_path = ""
+                    
+                # Set to black wallpaper
+                SPI_SETDESKWALLPAPER = 20
+                SPIF_UPDATEINIFILE = 1
+                SPIF_SENDWININICHANGE = 2
+                ctypes.windll.user32.SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, DesktopBlackoutManager._black_image_path, SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE)
             
-            # Hide icons
-            DesktopBlackoutManager._toggle_desktop_icons()
+            # --- Hide Icons (if enabled) ---
+            if config.get("hide_desktop_icons", True):
+                DesktopBlackoutManager._toggle_desktop_icons()
             
             DesktopBlackoutManager._is_blackout_active = True
         except Exception as e:
@@ -216,16 +220,18 @@ class DesktopBlackoutManager:
             
         try:
             import ctypes
+            from config import config
             
-            # Restore original wallpaper
-            if DesktopBlackoutManager._original_wallpaper is not None:
+            # --- Restore original wallpaper (if enabled) ---
+            if config.get("black_screen_enabled", True) and DesktopBlackoutManager._original_wallpaper is not None:
                 SPI_SETDESKWALLPAPER = 20
                 SPIF_UPDATEINIFILE = 1
                 SPIF_SENDWININICHANGE = 2
                 ctypes.windll.user32.SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, DesktopBlackoutManager._original_wallpaper, SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE)
                 
-            # Show icons again
-            DesktopBlackoutManager._toggle_desktop_icons()
+            # --- Show icons again (if enabled) ---
+            if config.get("hide_desktop_icons", True):
+                DesktopBlackoutManager._toggle_desktop_icons()
             
             DesktopBlackoutManager._is_blackout_active = False
         except Exception as e:
