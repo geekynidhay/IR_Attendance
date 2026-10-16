@@ -280,6 +280,13 @@ class IRAttendanceApp:
         
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         
+        # Check if previous session left blackout active (crash recovery)
+        try:
+            import system_utils
+            system_utils.DesktopBlackoutManager.restore_if_needed()
+        except Exception as e:
+            print(f"Startup blackout recovery failed: {e}")
+        
         # Start background service listener
         self.start_background_service()
         
@@ -320,6 +327,21 @@ class IRAttendanceApp:
 
     def on_closing(self):
         """Cleanup resources and exit"""
+        try:
+            import system_utils
+            system_utils.DesktopBlackoutManager.disable_blackout()
+        except Exception:
+            pass
+        if self.viewer_mode:
+            try:
+                self.viewer_mode.hide()
+            except Exception:
+                pass
+        if self.ai_attendance_mode:
+            try:
+                self.ai_attendance_mode.hide()
+            except Exception:
+                pass
         try:
             self.window_manager.unregister_hotkey()
         except Exception:
@@ -591,8 +613,19 @@ Hotkey: Ctrl+Space to bring window to focus from any application
         
         # Hint text
         ttk.Label(settings_win, text="Toggle these features ON/OFF to customize your\nexperience during Automatic Mode.", 
-                  font=('Arial', 9), foreground='gray', justify=tk.CENTER).pack(pady=15)
+                  font=('Arial', 9), foreground='gray', justify=tk.CENTER).pack(pady=10)
                   
+        def _manual_restore():
+            try:
+                import system_utils
+                system_utils.DesktopBlackoutManager.disable_blackout()
+                messagebox.showinfo("Desktop Restored", "Desktop wallpaper and icons have been restored successfully!", parent=settings_win)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to restore desktop: {e}", parent=settings_win)
+
+        ttk.Button(settings_win, text="🔄 Restore Desktop (Wallpaper & Icons)", 
+                   command=_manual_restore).pack(pady=5)
+                   
         close_btn = ttk.Button(settings_win, text="Close", command=settings_win.destroy, style='Accent.TButton')
         close_btn.pack(pady=10)
 

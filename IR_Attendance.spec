@@ -30,6 +30,7 @@ a = Analysis(
         ('src/new_icon.gif', '.'),
         ('src/error_cross.png', '.'),
         ('src/ok_btn.png', '.'),
+        ('mixkit-retro-game-emergency-alarm-1000.wav', '.'),
         ('src/ir-attendance-497712-b3ae57837200.json', '.'),
         ('src/*.py', '.'),
     ] + tesseract_datas,

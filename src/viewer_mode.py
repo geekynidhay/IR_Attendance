@@ -2258,6 +2258,179 @@ class ViewerMode:
             print(f"Blink overlay error: {e}")
         pass
 
+    @staticmethod
+    def extract_attendance_id_from_ocr(text):
+        """Extracts the attendance ID number from OCR text (e.g. 'Attendance ID - 1234')."""
+        if not text:
+            return None
+        import re
+        patterns = [
+            r"att[a-z]*\s*id\s*[-:–—]+\s*([0-9a-zA-Z]+)",
+            r"att[a-z]*\s*id\s*[:\s-]+\s*([0-9a-zA-Z]+)",
+            r"attendance\s*id\s*[-:–—]*\s*([0-9a-zA-Z]+)",
+            r"attendanceid\s*[-:–—]*\s*([0-9a-zA-Z]+)",
+            r"id\s*[-:–—]+\s*([0-9a-zA-Z]+)"
+        ]
+        for pat in patterns:
+            m = re.search(pat, text, re.IGNORECASE)
+            if m:
+                val = m.group(1).strip()
+                if val.lower() not in ("opening", "closing", "type", "open", "close"):
+                    return val
+        clean = "".join(text.split())
+        clean_patterns = [
+            r"att[a-z]*id[-:–—]+([0-9a-zA-Z]+)",
+            r"attendanceid[-:–—]*([0-9a-zA-Z]+)"
+        ]
+        for pat in clean_patterns:
+            m = re.search(pat, clean, re.IGNORECASE)
+            if m:
+                val = m.group(1).strip()
+                if val.lower() not in ("opening", "closing", "type", "open", "close"):
+                    return val
+        return None
+
+    @staticmethod
+    def is_id_matching(expected, detected):
+        """Checks if expected folder name matches detected attendance ID (handles leading zeros)."""
+        if not expected or not detected:
+            return False
+        exp = str(expected).strip().lower()
+        det = str(detected).strip().lower()
+        if exp == det:
+            return True
+        if exp.isdigit() and det.isdigit():
+            return int(exp) == int(det)
+        return False
+
+    def show_mismatch_alert(self, expected_id, detected_id=None):
+        """Displays a rapid light-red blinking full-screen overlay with an alert dialog.
+        Plays the alarm sound continuously until the user clicks OK or presses Enter/Esc."""
+        try:
+            from system_utils import AlarmSoundPlayer
+            AlarmSoundPlayer.play()
+        except Exception as e:
+            print(f"[MismatchAlert] Failed to start alarm sound: {e}")
+
+        try:
+            screen_w = self.parent.winfo_screenwidth()
+            screen_h = self.parent.winfo_screenheight()
+
+            # 1. Fullscreen blinking overlay
+            overlay_win = tk.Toplevel(self.parent)
+            overlay_win.title("Attendance Alert Overlay")
+            overlay_win.overrideredirect(True)
+            overlay_win.geometry(f"{screen_w}x{screen_h}+0+0")
+            overlay_win.attributes("-topmost", True)
+            overlay_win.attributes("-disabled", True)
+            overlay_win.config(bg="#FF5252")
+            overlay_win.attributes("-alpha", 0.32)
+
+            # Rapid blinking timer state
+            blink_state = {"alpha": 0.32, "timer_id": None, "is_active": True}
+
+            def _toggle_blink():
+                if not blink_state["is_active"]:
+                    return
+                try:
+                    next_alpha = 0.10 if blink_state["alpha"] >= 0.28 else 0.36
+                    blink_state["alpha"] = next_alpha
+                    overlay_win.attributes("-alpha", next_alpha)
+                    blink_state["timer_id"] = overlay_win.after(220, _toggle_blink)
+                except Exception:
+                    pass
+
+            blink_state["timer_id"] = overlay_win.after(220, _toggle_blink)
+
+            # 2. Centered opaque Modal Dialog Card
+            dialog_win = tk.Toplevel(self.parent)
+            dialog_win.title("Attendance Mismatch Detected")
+            dialog_win.attributes("-topmost", True)
+            dialog_win.attributes("-alpha", 1.0)
+            dialog_win.config(bg="#FAFAFA")
+            dialog_win.resizable(False, False)
+
+            card_w = 540
+            card_h = 320
+            pos_x = max(0, (screen_w - card_w) // 2)
+            pos_y = max(0, (screen_h - card_h) // 2)
+            dialog_win.geometry(f"{card_w}x{card_h}+{pos_x}+{pos_y}")
+
+            # Dismiss handler
+            def _dismiss(event=None):
+                blink_state["is_active"] = False
+                if blink_state["timer_id"]:
+                    try:
+                        overlay_win.after_cancel(blink_state["timer_id"])
+                    except Exception:
+                        pass
+                try:
+                    from system_utils import AlarmSoundPlayer
+                    AlarmSoundPlayer.stop()
+                except Exception:
+                    pass
+                try:
+                    dialog_win.destroy()
+                except Exception:
+                    pass
+                try:
+                    overlay_win.destroy()
+                except Exception:
+                    pass
+                try:
+                    self.window_manager.bring_to_front()
+                    self.parent.focus_set()
+                except Exception:
+                    pass
+
+            dialog_win.protocol("WM_DELETE_WINDOW", _dismiss)
+
+            # Content inside dialog_win
+            content_frame = tk.Frame(dialog_win, bg="#FAFAFA", padx=25, pady=20)
+            content_frame.pack(fill=tk.BOTH, expand=True)
+
+            tk.Label(content_frame, text="⚠️", font=('Arial', 32), bg="#FAFAFA").pack(pady=(0, 2))
+            tk.Label(content_frame, text="Attendance Mismatch Detected", 
+                     font=('Arial', 15, 'bold'), fg="#D32F2F", bg="#FAFAFA").pack(pady=(0, 10))
+
+            msg_text = (
+                "The Attendance ID on screen does not match the expected folder number\n"
+                "(attendance sequence has moved ahead).\n\n"
+                "Please verify the current student/folder number and resume attendance."
+            )
+            tk.Label(content_frame, text=msg_text, font=('Arial', 10), fg="#37474F", 
+                     bg="#FAFAFA", justify=tk.CENTER).pack(pady=(0, 10))
+
+            if detected_id:
+                detail_text = f"Expected Folder ID: {expected_id}   |   Detected on Screen: {detected_id}"
+                tk.Label(content_frame, text=detail_text, font=('Arial', 10, 'bold'), 
+                         fg="#B71C1C", bg="#FFEBEE", padx=10, pady=4).pack(pady=(0, 12))
+
+            ok_btn = tk.Button(
+                content_frame, text="  OK  ", font=('Arial', 11, 'bold'),
+                bg="#D32F2F", fg="white", activebackground="#B71C1C", activeforeground="white",
+                relief=tk.FLAT, padx=25, pady=6, cursor="hand2", command=_dismiss
+            )
+            ok_btn.pack(pady=(5, 0))
+            ok_btn.focus_set()
+
+            # Keybindings
+            for key in ("<Return>", "<KP_Enter>", "<Escape>", "<space>"):
+                dialog_win.bind(key, _dismiss)
+                content_frame.bind(key, _dismiss)
+                ok_btn.bind(key, _dismiss)
+
+            dialog_win.lift()
+            dialog_win.focus_force()
+
+        except Exception as e:
+            print(f"[MismatchAlert] Failed to display alert: {e}")
+            try:
+                from system_utils import AlarmSoundPlayer
+                AlarmSoundPlayer.stop()
+            except Exception:
+                pass
+
     def grab_bas_screenshot(self):
         """Grabs a screenshot focused on the BAS window or popup to maximize OCR accuracy and speed"""
         try:
@@ -2380,6 +2553,8 @@ class ViewerMode:
                     #    No time limit — we wait as long as it takes.
                     found_success = False
                     found_error = False
+                    found_mismatch = False
+                    mismatch_detected_id = None
 
                     while self.is_auto_running:
                         # Increase brightness after 5.5 seconds if not done yet
@@ -2411,8 +2586,40 @@ class ViewerMode:
                             )
                             
                             if "attendance type" in text:
-                                found_success = True
-                                break
+                                detected_id = self.extract_attendance_id_from_ocr(text)
+                                if not detected_id:
+                                    # Give 2 quick retries (over ~0.3s) to ensure the ID line is cleanly read
+                                    for _ in range(2):
+                                        time.sleep(0.15)
+                                        try:
+                                            sc = self.grab_bas_screenshot()
+                                            p_img = sc.convert('L')
+                                            sc.close()
+                                            extra_t = pytesseract.image_to_string(p_img).lower()
+                                            p_img.close()
+                                            d_id = self.extract_attendance_id_from_ocr(extra_t)
+                                            if d_id:
+                                                detected_id = d_id
+                                                text = extra_t
+                                                break
+                                        except Exception:
+                                            pass
+
+                                # Verify if detected_id matches subfolder_name
+                                if detected_id:
+                                    if self.is_id_matching(subfolder_name, detected_id):
+                                        found_success = True
+                                        break
+                                    else:
+                                        print(f"[AutoAttendance] Mismatch detected: Expected '{subfolder_name}', found on screen '{detected_id}'")
+                                        found_mismatch = True
+                                        mismatch_detected_id = detected_id
+                                        break
+                                else:
+                                    # Fallback if no ID field exists in OCR
+                                    found_success = True
+                                    break
+
                             if is_pid_xml_error or any(kw in text for kw in ERROR_KEYWORDS):
                                 found_error = True
                                 break
@@ -2438,6 +2645,12 @@ class ViewerMode:
                     # Always restore brightness after success or failure
                     if brightness_adjusted:
                         self.parent.after(0, self.decrease_brightness)
+
+                    # ── MISMATCH (Forward-going / Desync alert) ───────────────
+                    if found_mismatch:
+                        self.parent.after(0, self.stop_auto_attendance)
+                        self.parent.after(50, lambda exp=subfolder_name, det=mismatch_detected_id: self.show_mismatch_alert(exp, det))
+                        return
 
                     # ── SUCCESS ──────────────────────────────────────────────
                     if found_success:
@@ -2620,6 +2833,8 @@ class ViewerMode:
             else:
                 success = False
                 found_error = False
+                found_mismatch = False
+                mismatch_detected_id = None
                 for attempt in range(1, 4):
                     if not self.is_auto_running:
                         return
@@ -2691,8 +2906,37 @@ class ViewerMode:
                             )
                             
                             if "attendance type" in text:
-                                success = True
-                                break
+                                detected_id = self.extract_attendance_id_from_ocr(text)
+                                if not detected_id:
+                                    for _ in range(2):
+                                        time.sleep(0.15)
+                                        try:
+                                            sc = self.grab_bas_screenshot()
+                                            p_img = sc.convert('L')
+                                            sc.close()
+                                            extra_t = pytesseract.image_to_string(p_img).lower()
+                                            p_img.close()
+                                            d_id = self.extract_attendance_id_from_ocr(extra_t)
+                                            if d_id:
+                                                detected_id = d_id
+                                                text = extra_t
+                                                break
+                                        except Exception:
+                                            pass
+
+                                if detected_id:
+                                    if self.is_id_matching(subfolder_name, detected_id):
+                                        success = True
+                                        break
+                                    else:
+                                        print(f"[AutoAttendance] Mismatch detected: Expected '{subfolder_name}', found on screen '{detected_id}'")
+                                        found_mismatch = True
+                                        mismatch_detected_id = detected_id
+                                        break
+                                else:
+                                    success = True
+                                    break
+
                             if is_pid_xml_error or any(kw in text for kw in ERROR_KEYWORDS):
                                 found_error = True
                                 break
@@ -2701,9 +2945,14 @@ class ViewerMode:
                             
                         time.sleep(0.4)
                     
-                    if success or found_error:
+                    if success or found_error or found_mismatch:
                         break
-                        
+
+                if found_mismatch:
+                    self.parent.after(0, self.stop_auto_attendance)
+                    self.parent.after(50, lambda exp=subfolder_name, det=mismatch_detected_id: self.show_mismatch_alert(exp, det))
+                    return
+
                 if success:
                     import datetime as _dt2
                     _evt_time2 = _dt2.datetime.now().strftime("%H:%M:%S")
